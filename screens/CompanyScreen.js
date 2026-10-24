@@ -48,7 +48,7 @@ export default function CompanyScreen({ navigation, jobs, onCreateJob, loading, 
         <View style={styles.hero}>
           <Text style={styles.heroLabel}>VIRKSOMHEDENS OVERBLIK</Text>
           <Text style={styles.heroTitle}>Velkommen,{'\n'}MC El & Teknik</Text>
-          <Text style={styles.heroDescription}>Giv unge på 18–25 år deres første erfaring med enkle praktiske opgaver og vejledning fra en erfaren kollega.</Text>
+          <Text style={styles.heroDescription}>Giv unge uden tidligere erhvervserfaring en god start, med særligt fokus på gymnasieelever og unge i udsatte positioner. Tilbyd enkle praktiske opgaver og vejledning fra en erfaren kollega.</Text>
         </View>
         <View style={styles.demoNotice}>
           <Text style={styles.noteTitle}>Demonstration · Fiktive oplysninger</Text>

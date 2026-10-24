@@ -1,6 +1,6 @@
 # Foothold
 
-Foothold er en React Native/Expo-prototype, der hjælper unge på 15–19 år med at finde deres første job.
+Foothold er en React Native/Expo-prototype, der hjælper unge uden tidligere erhvervserfaring med at finde deres første job, med særligt fokus på gymnasieelever og unge i udsatte positioner.
 
 ## Start
 

@@ -20,7 +20,7 @@ export default function RoleScreen({ navigation, route }) {
           <View style={styles.card}>
             <Text style={styles.eyebrow}>{isCompany ? 'FOR VIRKSOMHEDER' : 'FOR BRUGERE'}</Text>
             <Text style={styles.pageTitle}>{isCompany ? 'Virksomhedslogin' : 'Velkommen tilbage'}</Text>
-            <Text style={styles.roleDescription}>{isCompany ? 'Log ind for at se jeres jobopslag og give unge en god start.' : 'Find dit første job. For dig på 18–25 år med lidt eller ingen erhvervserfaring.'}</Text>
+            <Text style={styles.roleDescription}>{isCompany ? 'Log ind for at se jeres jobopslag og give unge en god start.' : 'Find dit første job. For unge uden tidligere erhvervserfaring, med særligt fokus på gymnasieelever og unge i udsatte positioner.'}</Text>
             <View style={styles.form}>
               <View style={styles.field}>
                 <Text style={styles.inputLabel}>E-mail</Text>

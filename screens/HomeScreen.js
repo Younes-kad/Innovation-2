@@ -29,7 +29,7 @@ export default function HomeScreen({ navigation, jobs }) {
                 <Text style={styles.heroLabel}>DIT NÆSTE SKRIDT STARTER HER</Text>
               </View>
               <Text style={styles.heroTitle}>Store muligheder.{'\n'}Din første fod indenfor.</Text>
-              <Text style={styles.heroDescription}>For dig på 18–25 år med lidt eller ingen erhvervserfaring. Find dit første job, og lær gennem konkrete opgaver.</Text>
+              <Text style={styles.heroDescription}>For unge uden tidligere erhvervserfaring, med særligt fokus på gymnasieelever og unge i udsatte positioner. Find dit første job, og lær gennem konkrete opgaver.</Text>
               <View style={styles.heroBottom}>
                 <Text style={styles.heroTag}>Nysgerrighed er en god start</Text>
                 <Text style={styles.heroArrow} accessibilityElementsHidden>↗</Text>
