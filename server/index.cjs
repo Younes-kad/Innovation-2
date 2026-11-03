@@ -50,30 +50,31 @@ function createServer(dbPath = process.env.DB_PATH || path.join(__dirname, 'stor
   for (const o of all('SELECT * FROM employment_offers')) { notify(o.user_id, 'profile', `offer:${o.id}`); if (o.status !== 'pending') notify(o.company_id, 'profile', `response:${o.id}`); }
   const related = (viewer, id) => viewer.role === 'company' && (one('SELECT id FROM applications WHERE user_id=? AND company_id=?', id, viewer.id) || one('SELECT id FROM employees WHERE user_id=? AND company_id=?', id, viewer.id));
   const canFind = (viewer, id) => id === viewer.id || getProfile(id).discoverable === true || !!related(viewer, id);
-  function visiblePosts(viewer, id, onlyFollowed = false) {
-    const rows = id ? all("SELECT activity.seq,posts.* FROM posts JOIN content_activity activity ON activity.kind='post' AND activity.content_id=posts.id WHERE user_id=? ORDER BY activity.seq DESC", id) : all("SELECT activity.seq,posts.* FROM posts JOIN follows ON follows.followed_id=posts.user_id JOIN content_activity activity ON activity.kind='post' AND activity.content_id=posts.id WHERE follows.follower_id=? ORDER BY activity.seq DESC", viewer.id);
+  function visiblePosts(viewer, id) {
+    const rows = id ? all("SELECT activity.seq,posts.* FROM posts JOIN content_activity activity ON activity.kind='post' AND activity.content_id=posts.id WHERE user_id=? ORDER BY activity.seq DESC", id) : all("SELECT activity.seq,posts.* FROM posts JOIN content_activity activity ON activity.kind='post' AND activity.content_id=posts.id WHERE posts.user_id=? OR EXISTS(SELECT 1 FROM follows WHERE follows.followed_id=posts.user_id AND follows.follower_id=?) ORDER BY activity.seq DESC", viewer.id, viewer.id);
     return rows.filter(row => {
-      if (row.user_id === viewer.id) return !onlyFollowed;
+      if (row.user_id === viewer.id) return true;
       const p = getProfile(row.user_id), post = JSON.parse(row.data);
       if (DEMO_PERSON_IDS.includes(row.user_id) && post.fictional === true) return true;
       return p.discoverable === true && post.followers === true && !!one('SELECT 1 FROM follows WHERE follower_id=? AND followed_id=?', viewer.id, row.user_id) || !!related(viewer, row.user_id) && post.shared === true;
     }).map(row => {
       const p = getProfile(row.user_id), author = one('SELECT id,name,role FROM users WHERE id=?', row.user_id);
-      return { ...JSON.parse(row.data), id: row.id, seq: row.seq, createdAt: row.created_at, author: { ...author, avatar: p.discoverable || p.visibility?.presentation || row.user_id === viewer.id ? p.avatar : '', headline: p.discoverable ? p.headline : '' } };
+      return { ...JSON.parse(row.data), id: row.id, seq: row.seq, createdAt: row.created_at, author: { ...author, avatar: p.discoverable || p.visibility?.presentation || row.user_id === viewer.id ? p.avatar : '', headline: p.discoverable || row.user_id === viewer.id ? p.headline : '' } };
     });
   }
   function feedItems(viewer) {
-    const regular = visiblePosts(viewer, null, true).filter(p => !DEMO_PERSON_IDS.includes(p.author.id));
+    const regular = visiblePosts(viewer, null).filter(p => !DEMO_PERSON_IDS.includes(p.author.id));
     const demoPosts = all("SELECT activity.seq,posts.* FROM posts JOIN content_activity activity ON activity.kind='post' AND activity.content_id=posts.id WHERE posts.user_id IN (?,?,?) ORDER BY activity.seq", DEMO_COMPANY, ...DEMO_PERSON_IDS).filter(p => JSON.parse(p.data).fictional === true).map(p => { const u = one('SELECT id,name,role FROM users WHERE id=?', p.user_id), profile = getProfile(p.user_id); return { ...JSON.parse(p.data), id: p.id, seq: p.seq, createdAt: p.created_at, author: { ...u, avatar: profile.avatar, headline: profile.headline } }; });
     const demoJobs = all("SELECT activity.seq,jobs.* FROM jobs JOIN content_activity activity ON activity.kind='job' AND activity.content_id=jobs.id WHERE jobs.company_id=?", DEMO_COMPANY).filter(j => JSON.parse(j.data).fictional === true).map(j => ({ id: j.id, seq: j.seq, type: 'job', job: { ...JSON.parse(j.data), id: j.id, companyId: j.company_id } }));
-    const posts = [...regular, ...demoPosts], jobs = demoJobs.sort((a,b) => a.seq - b.seq);
+    const ownPosts = regular.filter(p => p.author.id === viewer.id);
+    const posts = [...regular.filter(p => p.author.id !== viewer.id), ...demoPosts], jobs = demoJobs.sort((a,b) => a.seq - b.seq);
     const mixed = [];
     for (let i = 0; i < Math.max(posts.length, jobs.length); i++) { if (jobs[i]) mixed.push(jobs[i]); if (posts[i]) mixed.push(posts[i]); }
-    return mixed;
+    return [...ownPosts, ...mixed];
   }
   function notificationState(viewer) {
     const seen = Object.fromEntries(all('SELECT section,seen_seq FROM notification_reads WHERE user_id=?', viewer.id).map(r => [r.section,r.seen_seq]));
-    const feed = feedItems(viewer);
+    const feed = feedItems(viewer).filter(p => p.type === 'job' || p.author.id !== viewer.id);
     const maxNotice = one('SELECT COALESCE(MAX(seq),0) AS seq FROM notifications WHERE user_id=?', viewer.id).seq;
     const jobsCursor = viewer.role === 'young' ? one("SELECT COALESCE(MAX(seq),0) AS seq FROM content_activity WHERE kind='job'").seq : maxNotice;
     return { counts: { feed: feed.filter(p => p.seq > (seen.feed || 0)).length, jobs: viewer.role === 'young' ? one("SELECT count(*) AS n FROM jobs JOIN content_activity activity ON activity.kind='job' AND activity.content_id=jobs.id WHERE activity.seq>?", seen.jobs || 0).n : one("SELECT count(*) AS n FROM notifications WHERE user_id=? AND section='jobs' AND seq>?", viewer.id, seen.jobs || 0).n, profile: one("SELECT count(*) AS n FROM notifications WHERE user_id=? AND section='profile' AND seq>?", viewer.id, seen.profile || 0).n }, cursors: { feed: one('SELECT COALESCE(MAX(seq),0) AS seq FROM content_activity').seq, jobs: jobsCursor, profile: maxNotice } };

@@ -6,7 +6,8 @@ const path = require('node:path');
 const { chromium } = require('playwright');
 const { createServer } = require('../server/index.cjs');
 const root = path.resolve(__dirname, '..', 'dist');
-const withDemo = process.argv.includes('--demo');
+const withFeed = process.argv.includes('--feed');
+const withDemo = process.argv.includes('--demo') || withFeed;
 const apiServer = createServer(':memory:', { seedDemo: withDemo });
 const webServer = http.createServer(async (req, res) => {
   const target = path.resolve(root, '.' + decodeURIComponent(new URL(req.url, 'http://localhost').pathname));
@@ -67,6 +68,57 @@ async function listen(server) { await new Promise(resolve => server.listen(0, '1
     }
     await page.goto(webBase);
     await login('young@example.dk');
+    if (withFeed) {
+      await visibleText('Cafémedhjælper – dit første fritidsjob');
+      const text = 'Min første oplevelse på jobbet!\n\n' + 'Jeg har lært at hjælpe kunder og samarbejde med mine kolleger. '.repeat(12) + '\n\nHer slutter hele mit opslag.';
+      await page.getByRole('button', { name: '+ Skriv et opslag', exact: true }).click();
+      await page.getByLabel('Dit opslag', { exact: true }).fill(text);
+      const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.getByRole('button', { name: 'Vedhæft billede', exact: true }).click()]);
+      await chooser.setFiles({ name: 'oplevelse.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64') });
+      await page.getByRole('img', { name: 'Valgt billede', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Slå op', exact: true }).click();
+      await page.getByRole('button', { name: 'Slå op', exact: true }).waitFor({ state: 'hidden' });
+      await visibleText(text);
+      await page.getByRole('img', { name: 'Billede i Test Ungs opslag', exact: true }).waitFor();
+      let feed = await api('/feed', 'GET', null, young.token);
+      assert.equal(feed[0].text, text);
+      assert.equal(feed[0].followers, false);
+      assert.ok(feed[0].image.startsWith('data:image/png;base64,'));
+      assert.ok(!(await api('/feed', 'GET', null, company.token)).some(p => p.id === feed[0].id));
+      await page.getByRole('button', { name: 'Rediger opslag', exact: true }).click();
+      await page.getByLabel('Dit opslag', { exact: true }).fill('Mit redigerede opslag fra feedet.');
+      await page.getByRole('button', { name: 'Gem ændringer', exact: true }).click();
+      await page.getByRole('button', { name: 'Gem ændringer', exact: true }).waitFor({ state: 'hidden' });
+      await visibleText('Mit redigerede opslag fra feedet.');
+      await page.route('**/people', route => route.fulfill({ status: 500, headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' }, body: JSON.stringify({ error: 'Simuleret fejl i profilsøgning' }) }));
+      await page.reload(); await login('young@example.dk');
+      await visibleText('Mit redigerede opslag fra feedet.');
+      await page.unroute('**/people');
+      await tab('Profil').click();
+      await page.getByRole('button', { name: 'Opslag', exact: true }).click();
+      await page.getByRole('button', { name: '+ Nyt opslag', exact: true }).click();
+      await page.getByLabel('Dit opslag', { exact: true }).fill('Mit nye opslag fra profilen kommer også i feedet.');
+      await page.getByRole('button', { name: 'Slå op', exact: true }).click();
+      await page.getByRole('button', { name: 'Slå op', exact: true }).waitFor({ state: 'hidden' });
+      await visibleText('Mit nye opslag fra profilen kommer også i feedet.');
+      assert.equal((await api('/feed', 'GET', null, young.token))[0].text, 'Mit nye opslag fra profilen kommer også i feedet.');
+      await tab('Profil').click(); await page.getByRole('button', { name: 'Log ud', exact: true }).click();
+      await page.getByRole('button', { name: 'Log ind som virksomhed', exact: true }).click();
+      await login('company@example.dk');
+      await page.getByRole('button', { name: '+ Skriv et opslag', exact: true }).click();
+      await page.getByLabel('Dit opslag', { exact: true }).fill('Et nyt opslag fra virksomheden.');
+      await page.getByRole('button', { name: 'Slå op', exact: true }).click();
+      await page.getByRole('button', { name: 'Slå op', exact: true }).waitFor({ state: 'hidden' });
+      await visibleText('Et nyt opslag fra virksomheden.');
+      await page.setViewportSize({ width: 320, height: 844 }); await checkNav();
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.waitForTimeout(400); // Let the composer closing animation finish for the preview.
+      await mkdir(path.join(__dirname, '..', 'server', 'storage'), { recursive: true });
+      await page.screenshot({ path: path.join(__dirname, '..', 'server', 'storage', 'feed-preview.png') });
+      assert.deepEqual(errors, []);
+      console.log('PASS: full post text and image, direct feed composer, private own post appears first, edit, persistence, profile-to-feed publishing, company publishing and mobile layout.');
+      return;
+    }
     if (withDemo) {
       await visibleText('Cafémedhjælper – dit første fritidsjob');
       assert.equal(await page.getByText('Fiktivt inspirationsopslag', { exact: true }).count(), 2);

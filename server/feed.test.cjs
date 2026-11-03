@@ -80,6 +80,20 @@ test('followed feed, opt-in privacy, company posts and persistent unread cursors
     await req('/posts', 'POST', { text: 'Nyt efter sletning', followers: true }, company.token, 201);
     assert.equal((await req('/notifications', 'GET', null, reader.token)).counts.feed, 1);
     await req(`/follows/${reader.user.id}`, 'POST', {}, reader.token, 403);
+    const privateText = 'Mit eget private opslag.\n\n' + 'Jeg lærer noget nyt om arbejdslivet hver dag. '.repeat(20);
+    const privateImage = 'data:image/png;base64,iVBORw0KGgo=';
+    const unreadBefore = (await req('/notifications', 'GET', null, reader.token)).counts.feed;
+    await req('/posts', 'POST', { text: privateText, image: privateImage, followers: false, shared: false }, reader.token, 201);
+    const ownFeed = await req('/feed', 'GET', null, reader.token);
+    assert.equal(ownFeed[0].text, privateText.trim());
+    assert.equal(ownFeed[0].image, privateImage);
+    assert.equal(ownFeed[0].author.id, reader.user.id);
+    assert.equal((await req('/notifications', 'GET', null, reader.token)).counts.feed, unreadBefore, 'Own posts do not create unread badges');
+    for (const viewer of [stranger, company, author]) assert.ok(!(await req('/feed', 'GET', null, viewer.token)).some(p => p.id === ownFeed[0].id), 'Private post must not leak to other feeds');
+    await req(`/posts/${ownFeed[0].id}`, 'PUT', { text: 'Mit redigerede opslag', followers: false }, reader.token);
+    assert.equal((await req('/feed', 'GET', null, reader.token))[0].text, 'Mit redigerede opslag');
+    await req(`/posts/${ownFeed[0].id}`, 'DELETE', null, reader.token);
+    assert.ok(!(await req('/feed', 'GET', null, reader.token)).some(p => p.id === ownFeed[0].id));
     await req('/feed', 'GET', null, null, 401);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });

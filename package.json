@@ -9,6 +9,7 @@
     "test": "node server/server.test.cjs && node server/feed.test.cjs && node server/apiAddress.test.cjs && node server/demo.test.cjs",
     "test:ui": "node scripts/navigation-smoke.cjs",
     "test:ui:demo": "node scripts/navigation-smoke.cjs --demo",
+    "test:ui:feed": "node scripts/navigation-smoke.cjs --feed",
     "android": "node scripts/start.cjs --android",
     "ios": "node scripts/start.cjs --ios",
     "web": "node scripts/start.cjs --web"

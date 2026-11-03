@@ -2,23 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
+import { pickImage } from '../data/pickImage';
+import PostComposer from '../components/PostComposer';
 import { api } from '../data/api';
 import { styles } from '../styles';
 import { Avatar, Button, Field, Toggle, dateLabel } from '../components/ProfileUI';
 import { useActivity } from '../data/ActivityContext';
 
 const blankEntry = type => ({ id: `${Date.now()}-${Math.random()}`, organization: '', title: '', start: '', end: '', description: '', type });
-async function pickImage() {
-  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], base64: true, quality: 0.75 });
-  if (result.canceled) return null;
-  const asset = result.assets[0];
-  if (!asset.base64 || asset.base64.length > 7000000) throw new Error('Vælg et billede på højst 5 MB.');
-  // Native pickers may convert HEIC to JPEG while retaining the source MIME type.
-  const mime = asset.base64.startsWith('/9j/') ? 'image/jpeg' : asset.base64.startsWith('iVBORw0KGgo') ? 'image/png' : asset.base64.startsWith('UklGR') ? 'image/webp' : asset.mimeType || 'image/jpeg';
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) throw new Error('Vælg JPG, PNG eller WebP.');
-  return `data:${mime};base64,${asset.base64}`;
-}
 
 function EntryEditor({ title, entries, onChange, education, disabled }) {
   function update(index, key, value) { onChange(entries.map((e, i) => i === index ? { ...e, [key]: value } : e)); }
@@ -88,7 +79,7 @@ export default function ProfileScreen({ route, user, navigation, onLogout }) {
       </>}
     </>}
   </ScrollView>
-    <Modal visible={!!draft || !!postDraft || !!deleting} animationType="slide" onRequestClose={close}><SafeAreaView style={styles.screen}><KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}><ScrollView contentContainerStyle={styles.pageContent} keyboardShouldPersistTaps="handled"><Button secondary title="← Annuller" disabled={busy} onPress={close} /><View style={{ marginVertical: 20 }}>{feedback}</View>
+    <Modal visible={!!draft || !!deleting} animationType="slide" onRequestClose={close}><SafeAreaView style={styles.screen}><KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}><ScrollView contentContainerStyle={styles.pageContent} keyboardShouldPersistTaps="handled"><Button secondary title="← Annuller" disabled={busy} onPress={close} /><View style={{ marginVertical: 20 }}>{feedback}</View>
       {draft && <View style={styles.form}><Text style={styles.pageTitle}>Din professionelle profil</Text><Avatar large name={draft.name} uri={draft.avatar} /><Button secondary title="Vælg profilbillede" disabled={busy} onPress={() => choose(uri => setDraft(d => ({ ...d, avatar: uri })))} />{draft.avatar ? <Button secondary title="Fjern profilbillede" disabled={busy} onPress={() => setDraft(d => ({ ...d, avatar: '' }))} /> : null}
         {['name', 'headline', 'location', 'about'].map((key, i) => <Field key={key} label={['Navn', 'Kort overskrift', 'Lokation (valgfrit)', 'Om mig'][i]} value={draft[key]} multiline={key === 'about'} editable={!busy} maxLength={key === 'about' ? 3000 : key === 'headline' ? 180 : 120} onChangeText={v => setDraft(d => ({ ...d, [key]: v }))} />)}
         <View style={styles.demoNotice}><Text style={styles.noteTitle}>Dit netværk</Text><Toggle label="Min profil må findes og følges af andre" value={draft.discoverable} disabled={busy} onValueChange={v => setDraft(d => ({ ...d, discoverable: v }))} /><Text style={styles.noteText}>Når du slår dette til, kan andre konti finde dit navn, billede og overskrift. Du vælger separat, hvilke opslag følgere må se. Fødselsdato, telefonnummer, løn og private profilsektioner deles ikke.</Text></View>
@@ -100,16 +91,8 @@ export default function ProfileScreen({ route, user, navigation, onLogout }) {
         {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
         <Button title={busy ? 'Gemmer …' : 'Gem profil'} disabled={busy} onPress={() => perform(async () => { await api('/profiles/me', 'PUT', { ...draft, skills: draft.skillsText.split(',').map(s => s.trim()).filter(Boolean) }); setDraft(null); }, 'Din profil er opdateret.')} />
       </View>}
-      {postDraft && <View style={styles.form}><Text style={styles.pageTitle}>{postDraft.id ? 'Rediger opslag' : 'Et nyt skridt'}</Text><Field label="Dit opslag" placeholder="Hvad har du lært eller oplevet?" multiline maxLength={5000} value={postDraft.text} editable={!busy} onChangeText={v => setPostDraft(d => ({ ...d, text: v }))} />
-        {postDraft.image ? <><Image source={{ uri: postDraft.image }} accessibilityLabel="Valgt billede" style={{ width: '100%', height: 240 }} resizeMode="contain" /><Button secondary title="Fjern billede" disabled={busy} onPress={() => setPostDraft(d => ({ ...d, image: '' }))} /></> : null}
-        <Button secondary title="Vedhæft billede" disabled={busy} onPress={() => choose(uri => setPostDraft(d => ({ ...d, image: uri })))} />
-        <Toggle label="Del dette opslag med mine følgere" value={postDraft.followers} disabled={busy || !profile.discoverable} onValueChange={v => setPostDraft(d => ({ ...d, followers: v }))} />
-        {!profile.discoverable && <Text style={styles.helper}>Slå først “Min profil må findes og følges” til under Rediger profil, hvis du vil dele med følgere.</Text>}
-        {!companyOwner && <Toggle label="Del med virksomheder, jeg har søgt hos eller er ansat hos" value={postDraft.shared} disabled={busy} onValueChange={v => setPostDraft(d => ({ ...d, shared: v }))} />}
-        {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
-        <Button title={busy ? 'Gemmer …' : 'Gem opslag'} disabled={busy} onPress={() => perform(async () => { await api(postDraft.id ? `/posts/${postDraft.id}` : '/posts', postDraft.id ? 'PUT' : 'POST', postDraft); setPostDraft(null); setTab('Opslag'); }, 'Opslaget er gemt.')} />
-      </View>}
       {deleting && <View style={styles.form}><Text style={styles.sectionTitle}>Slet opslag?</Text><Text style={styles.body}>Opslaget og det vedhæftede billede slettes permanent.</Text><Button title="Slet opslag permanent" disabled={busy} onPress={() => perform(async () => { await api(`/posts/${deleting.id}`, 'DELETE'); setDeleting(null); }, 'Opslaget er slettet.')} /></View>}
     </ScrollView></KeyboardAvoidingView></SafeAreaView></Modal>
+    <PostComposer visible={!!postDraft} initialPost={postDraft?.id ? postDraft : undefined} profile={profile} company={companyOwner} onClose={() => setPostDraft(null)} onSaved={async () => { setPostDraft(null); setTab('Opslag'); await load(); navigation.navigate('FeedTab', { screen: 'Feed', initial: false }); }} />
   </SafeAreaView>;
 }
