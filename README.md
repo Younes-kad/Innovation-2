@@ -1,10 +1,10 @@
 # Foothold
 
-Foothold er en React Native/Expo-prototype, der hjælper unge uden tidligere erhvervserfaring med at finde deres første job, med særligt fokus på gymnasieelever og unge i udsatte positioner.
+Foothold er en React Native/Expo-app, der hjælper unge uden tidligere erhvervserfaring med at finde deres første job. Appen har nu en Node-backend og permanent SQLite-database; det eksisterende grønne design og joboversigten er bevaret.
 
 ## Start
 
-Installer Node.js LTS, og åbn terminalen i projektmappen.
+Installer Node.js 22.13 eller nyere (med `node:sqlite`), og åbn terminalen i projektmappen.
 
 I PowerShell skriver du:
 
@@ -12,7 +12,7 @@ I PowerShell skriver du:
 .\start.cmd
 ```
 
-Husk `.\` foran filnavnet. Scriptet installerer pakkerne, hvis Expo eller AsyncStorage mangler, og starter Expo.
+Husk `.\` foran filnavnet. Scriptet installerer manglende pakker og starter både API på port 3001 og Expo. Ctrl+C stopper begge processer.
 
 Du kan også starte manuelt:
 
@@ -21,25 +21,78 @@ npm.cmd install
 npm.cmd start
 ```
 
-Scan QR-koden med Expo Go på telefonen. Telefon og computer skal være på samme Wi-Fi. Projektet bruger SDK 57.
+Web: `npm.cmd run web`. Opret først en virksomhedskonto og et job, log ud, opret en ungekonto, og søg jobbet. Kontooprettelse kræver navn, e-mail, telefonnummer og mindst 10 tegn i adgangskoden. Unge angiver også fødselsdato (ÅÅÅÅ-MM-DD); er man under 18, er en forælders telefonnummer obligatorisk. Der følger ingen konti eller adgangskoder med.
+
+Telefonnumre accepteres som 8 cifre eller med international landekode (fx +45). Kravene kontrolleres både i formularen og på serveren. Telefonnumre og fødselsdato gemmes separat som private kontooplysninger og deles ikke via profiler eller ansøgninger. Numrene registreres uden SMS-verifikation. Eksisterende konti kan stadig logge ind; de nye felter kræves ved ny konto-oprettelse.
+
+På telefonen skal API-adressen være computerens lokale IP-adresse. Sæt den inden opstart, fx:
+
+```powershell
+$env:EXPO_PUBLIC_API_URL = 'http://192.168.1.20:3001'
+npm.cmd start
+```
+
+Scan QR-koden med en kompatibel Expo Go. Telefon og computer skal være på samme Wi-Fi; port 3001 skal kunne nås fra telefonen. Projektet bruger SDK 57. Billedvælgeren understøtter JPG, PNG og WebP op til 5 MB. Sessionsnøglen ligger kun i hukommelsen: efter genindlæsning logger man ind igen.
 
 ## Funktioner
 
-- Brugerlogin og virksomhedslogin uden krav om at udfylde felterne.
-- Joboversigt, jobbeskrivelse og en demoansøgning.
-- Virksomhedsside for MC El & Teknik med fiktive opslag og unge.
-- Opret jobopslag med titel, beskrivelse, lokation samt valgfri aldersgruppe og tags.
-- Nye opslag gemmes lokalt med AsyncStorage og vises i begge oversigter efter genstart.
+- Fast bundnavigation med tre faner: Hjem, Job og Profil for unge; Feed, Job og Profil for virksomheder. Fanerne bevarer navigationen, så bundmenuen bliver stående i jobdetaljer, ansøgninger og profilvisninger.
+- Hjem/Feed viser de nyeste opslag fra profiler, man følger. Find profiler, følg/stop med at følge, og åbn deres profil direkte fra feedet. Både unge og virksomheder kan oprette opslag.
+- Privat som udgangspunkt: slå “Min profil må findes og følges af andre” til under Rediger profil for at vise navn, billede og overskrift i profilsøgningen. Hvert opslag har et særskilt valg om deling med følgere. Eksisterende private opslag offentliggøres ikke automatisk. Profilens øvrige sektioner, telefonnumre og løn er beskyttet som før.
+- Røde badges viser ulæste opslag i feedet, nye jobs (unge), nye ansøgninger (virksomhed), ansættelsestilbud (unge) og svar på tilbud (virksomhed). De opdateres ved skærmskift/genåbning og hvert 20. sekund, mens appen er aktiv. Det er badges i appen, ikke pushbeskeder. Læsemarkeringer gemmes på kontoen og bevares efter genstart.
+- Jobfanen har søgning i titel, virksomhed, beskrivelse og tags samt filtre for lokation og område/kompetence. Eksempelopslag er skjult som standard og kan slås til under Filtrér jobs.
+- Profilfanen rummer profilredigering og opslag. Unge finder Mine ansættelser her; virksomhedsprofiler viser Hvem har vi ansat? med profillinks og adgang til ansøgninger/tilbud. Log ud ligger også under Profil.
+- Separate unge- og virksomhedskonti med adgangskoder lagret som saltede scrypt-hashes og serverkontrollerede sessioner, der udløber efter 24 timer.
+- Virksomheders jobopslag gemmes i databasen og vises i unges joboversigt.
+- Ansøgninger med navn, billede (hvis delt), dato, stilling, indhold og status. Filtrering efter stilling og status samt direkte profillinks.
+- Ansøgninger kan modtages, behandles, accepteres og afvises. Efter accept sender virksomheden et ansættelsestilbud med aftalt løn (kr./time, kr./måned eller kr. i alt), ugentlige timer, startdato og varighed: 3 måneder, 6 måneder, 1 år, miniprojekt eller engangsopgave. Slutdato beregnes ved faste varigheder; ved projekter/opgaver angives den særskilt.
+- Virksomheden følger tilbud under Tilbud. Den unge finder dem under Mine ansættelser og skal selv godkende eller afvise. Først ved godkendelse registreres personen under Ansatte. Virksomheden kan ikke registrere en ny ansættelse uden denne godkendelse.
+- Ved godkendelse kan den unge vælge at tilføje jobbet under Erfaring med det samme eller gøre det senere fra Mine ansættelser. Kun virksomhed, stilling og periode tilføjes. Profilens privatlivsindstillinger bevares; løn og timer deles aldrig på profilen. Tilbudsvilkår ses kun af afsendervirksomheden og den unge. Et sendt tilbud kan ikke ændres; ved afvisning kan virksomheden sende et nyt tilbud.
+- Redigerbar profil med billede, overskrift, lokation, præsentation, kronologiske erfaringer (job, frivilligt arbejde, projekter), uddannelse og kompetencer.
+- Oprettelse, redigering og sletning af egne opslag med billeder, dato og nyeste først.
+- Privatliv pr. profilsektion og pr. opslag. Alt er privat som udgangspunkt. Kun ejeren kan redigere. Virksomhedsdelte profilsektioner og opslag kræver en ansøgnings- eller ansættelsesrelation; deling med følgere er et separat tilvalg. Navn og indsendte ansøgningsoplysninger deles med modtagervirksomheden.
+- Eksisterende eksempelopslag er bevaret og markeret; de kan ikke søges, da de ikke tilhører en registreret virksomhed.
+- Ældre jobopslag under AsyncStorage-nøglen `foothold.companyJobs.v2` kan importeres via virksomhedens dashboard. Brugeren vælger, hvilken virksomhed de tilhører. Originalerne bevares, og gentagen import til samme virksomhed opretter ingen dubletter.
 
-Filtre og medarbejderoverblik er kun visuelle.
+Filtrene i både joboversigten og Ansøgninger er funktionelle.
+
+## Database og drift
+
+API'et starter med en tom database og opretter tabeller automatisk. Data ligger i `server/storage/foothold.sqlite` og bevares mellem genstarter. Mappen er git-ignoreret; behold den ved opdatering. Tag backup, mens serveren er stoppet (eller med en SQLite-kompatibel backup, der inkluderer WAL). Ingen eksisterende lokale data slettes automatisk. Tidligere registrerede ansatte bevares og markeres som ældre registreringer uden tilbudsvilkår; alle nye ansættelser kræver godkendelse via tilbud.
+
+Backend kan startes separat med `npm.cmd run server`. Miljøvariabler:
+
+- `PORT`: API-port, standard `3001`.
+- `DB_PATH`: alternativ databasefil.
+- `ALLOWED_ORIGINS`: kommaseparerede tilladte weborigins; standard `http://localhost:8081,http://localhost:19006`.
+- `EXPO_PUBLIC_API_URL`: API-adresse, der indbygges i klienten.
+
+Dette er en lokal udviklingsopsætning. Offentlig drift kræver HTTPS, en vedvarende serverdisk og korrekt API-adresse/weborigin. E-mailbekræftelse, gendannelse af adgangskoder og virksomhedskontrol er ikke implementeret.
+
+## Test
+
+```powershell
+npm.cmd test
+npx.cmd expo export --platform web
+npm.cmd run test:ui
+```
+
+Integrationstesten bruger en isoleret midlertidig database og dækker profilredigering, erfaring og uddannelse, opslag med billeder, ansøgning, virksomhedsoversigt, profilvisning med privatlivsfiltre, statusændringer og persistens efter servergenstart. Tilbudsflowet testes for løn/timer/varighed, afvisning og genfremsendelse, medarbejdergodkendelse, ingen ansættelse før godkendelse, øjeblikkelig/senere/ingen tilføjelse til profil, beskyttelse af lønoplysninger og blokering af fremmede konti og dobbelte svar. Testene dækker også registreringens telefonkrav og 18-årsgrænse, dubletter, ugyldige datoer, billedformater og tilbagekaldelse af deling.
+
+Feedtesten kontrollerer opt-in, følg/stop, virksomhedsopslag, privatliv og ulæste badges, inklusive nye opslag der ankommer, mens en skærm bliver læst. UI-testen bruger den eksporterede webapp, en isoleret database i hukommelsen og en skjult Edge-browser. Den gennemfører navigation, feed, jobfiltrering, ansøgning, tilbudsgodkendelse og virksomhedens ansatte ved 320/390 px bredde. Edge skal være installeret; alternativt kan `BROWSER_CHANNEL` sættes til fx `chrome`. Der ændres ingen rigtige konti i testen.
+
+Manuel kontrol: opret virksomhed og job → opret ung og profil → tilføj erfaring og et delt opslag → søg jobbet → log ind som virksomhed → åbn ansøgning og profil → accepter ansøgning → udfyld løn, timer, startdato og varighed → send tilbud → log ind som ung → Mine ansættelser → vælg profiltilføjelse → godkend → kontrollér virksomhedens Ansatte og den unges Erfaring. Prøv også afvisning og tilføjelse til profil senere. Kontrollér, at private oplysninger og løn ikke vises på virksomhedsvisningen af profilen, og prøv billedvælgeren på mobil og web.
 
 ## Filer
 
-- `App.js`: Navigation og lokal lagring.
+- `App.js`: Rollespecifik navigation, login, jobdata og import af lokale opslag.
 - `screens/`: Appens skærme.
 - `components/`: Genbrugelige jobkort og tags.
 - `data/`: Demonstrationsjobs og valgbare tags.
 - `styles.js`: Styling og farver.
+- `server/index.cjs`: API, SQLite-skema, validering og adgangskontrol.
+- `server/server.test.cjs`: Integrationstest af hele flowet.
+- `data/api.js`: API-klient; sessionsnøglen gemmes kun i hukommelsen.
 
 ## Demovideo
 

@@ -2,28 +2,34 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, styles } from '../styles';
+import { api } from '../data/api';
 
-export default function ApplyScreen({ navigation, route, jobs }) {
+export default function ApplyScreen({ navigation, route, jobs, user }) {
   const { id } = route.params;
   const job = jobs.find(item => item.id === id);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState(user.name);
+  const [email, setEmail] = useState(user.email);
   const [about, setAbout] = useState('');
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // Kontrollér felterne og vis en lokal kvittering; ingen ansøgning sendes.
-  function sendApplication() {
+  // Vis først kvitteringen, når serveren har gemt ansøgningen.
+  async function sendApplication() {
+    if (saving) return;
     if (!name.trim() || !about.trim() || !email.trim()) {
       setError('Udfyld dit navn, din e-mail og lidt om dig selv.');
       return;
     }
     setError('');
-    setSent(true); // Kun lokal visning. Ingen oplysninger sendes eller gemmes.
+    setSaving(true);
+    try { await api('/applications', 'POST', { jobId: id, name, email, about }); setSent(true); }
+    catch (e) { setError(e.message); }
+    finally { setSaving(false); }
   }
 
   if (!job) {
-    return <View style={styles.empty}><Text style={styles.sectionTitle}>Jobbet blev ikke fundet</Text><Pressable accessibilityRole="button" style={styles.primaryButton} onPress={() => navigation.popTo('Home')}><Text style={styles.primaryButtonText}>Tilbage til jobs</Text></Pressable></View>;
+    return <View style={styles.empty}><Text style={styles.sectionTitle}>Jobbet blev ikke fundet</Text><Pressable accessibilityRole="button" style={styles.primaryButton} onPress={() => navigation.popTo('JobList')}><Text style={styles.primaryButtonText}>Tilbage til jobs</Text></Pressable></View>;
   }
 
   if (sent) {
@@ -34,9 +40,9 @@ export default function ApplyScreen({ navigation, route, jobs }) {
           <View style={styles.successIcon}><Text style={styles.successCheck}>✓</Text></View>
           <Text style={styles.eyebrow}>FØRSTE SKRIDT ER TAGET</Text>
           <Text style={styles.successTitle} accessibilityRole="header" accessibilityLiveRegion="polite">Din ansøgning er sendt ✓</Text>
-          <Text style={styles.successText}>Tak, {name.trim()}! Du har nu prøvet at ansøge som {job.title} hos {job.company}.</Text>
-          <Text style={styles.helperCentered}>Dette er en prototype. Din ansøgning er ikke sendt til en virksomhed.</Text>
-          <Pressable accessibilityRole="button" style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={() => navigation.popTo('Home')}>
+          <Text style={styles.successText}>Tak, {name.trim()}! Din ansøgning som {job.title} ligger nu hos {job.company}.</Text>
+          <Text style={styles.helperCentered}>Virksomheden kan se din ansøgning og de profiloplysninger, du har valgt at dele.</Text>
+          <Pressable accessibilityRole="button" style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={() => navigation.popTo('JobList')}>
             <Text style={styles.primaryButtonText}>Tilbage til jobs  →</Text>
           </Pressable>
         </View>
@@ -70,11 +76,11 @@ export default function ApplyScreen({ navigation, route, jobs }) {
               <Text style={styles.helper}>Et par sætninger er helt fint.</Text>
             </View>
             {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
-            <Pressable accessibilityRole="button" style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={sendApplication}>
-              <Text style={styles.primaryButtonText}>Send ansøgning  →</Text>
+            <Pressable accessibilityRole="button" disabled={saving} style={({ pressed }) => [styles.primaryButton, (pressed || saving) && styles.pressed]} onPress={sendApplication}>
+              <Text style={styles.primaryButtonText}>{saving ? 'Sender …' : 'Send ansøgning  →'}</Text>
             </Pressable>
           </View>
-          <Text style={styles.helperCentered}>Prototype · Dine oplysninger bliver ikke sendt eller gemt.</Text>
+          <Text style={styles.helperCentered}>Dit navn, din e-mail og ansøgning deles med {job.company}. Profilsektioner og opslag deles kun, hvis du har valgt det på din profil.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

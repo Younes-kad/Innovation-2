@@ -3,13 +3,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../styles';
 import JobTags from '../components/JobTags';
 
-export default function JobScreen({ navigation, route, jobs }) {
+export default function JobScreen({ navigation, route, jobs, canApply }) {
   const { id } = route.params;
-  // Den fælles jobliste indeholder også opslag hentet fra AsyncStorage.
+  // Den fælles jobliste indeholder databaseopslag og markerede eksempler.
   const job = jobs.find(item => item.id === id);
 
   if (!job) {
-    return <View style={styles.empty}><Text style={styles.sectionTitle}>Jobbet blev ikke fundet</Text><Pressable accessibilityRole="button" style={styles.primaryButton} onPress={() => navigation.popTo('Home')}><Text style={styles.primaryButtonText}>Tilbage til jobs</Text></Pressable></View>;
+    return <View style={styles.empty}><Text style={styles.sectionTitle}>Jobbet blev ikke fundet</Text><Pressable accessibilityRole="button" style={styles.primaryButton} onPress={() => navigation.popTo('JobList')}><Text style={styles.primaryButtonText}>Tilbage til jobs</Text></Pressable></View>;
   }
 
   return (
@@ -46,9 +46,9 @@ export default function JobScreen({ navigation, route, jobs }) {
           <Text style={styles.noteTitle}>Dit første skridt behøver ikke være stort.</Text>
           <Text style={styles.noteText}>Fortæl kort om dig selv, og hvorfor jobbet vækker din nysgerrighed.</Text>
         </View>
-        <Pressable accessibilityRole="button" style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={() => navigation.navigate('Apply', { id: job.id })}>
+        {canApply && !job.demo ? <Pressable accessibilityRole="button" style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={() => navigation.navigate('Apply', { id: job.id })}>
           <Text style={styles.primaryButtonText}>Ansøg nu  →</Text>
-        </Pressable>
+        </Pressable> : <Text style={styles.noteTitle}>{job.demo ? 'Eksempelopslag · Kan ikke søges' : 'Dit virksomhedsopslag'}</Text>}
         <Text style={styles.helperCentered}>En kort ansøgning er en god start.</Text>
       </ScrollView>
     </SafeAreaView>

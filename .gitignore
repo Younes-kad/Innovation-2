@@ -4,3 +4,5 @@ dist/
 .expo-web/
 expo-env.d.ts
 *.tsbuildinfo
+server/storage/
+.env

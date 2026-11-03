@@ -57,7 +57,7 @@ export const styles = StyleSheet.create({
   filter: { minHeight: 46, paddingVertical: 12, paddingHorizontal: 18, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white, justifyContent: 'center' },
   filterText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
   card: { backgroundColor: colors.white, borderRadius: 22, borderWidth: 1, borderColor: colors.border, padding: 22, marginBottom: 15, shadowColor: '#183C33', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12, elevation: 2 },
-  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  rowBetween: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   logo: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   logoText: { fontSize: 23, fontWeight: '800', letterSpacing: -1 },
   company: { fontSize: 14, fontWeight: '700', color: colors.ink, lineHeight: 21 },

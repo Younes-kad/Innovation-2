@@ -18,6 +18,7 @@ export default function JobCard({ job, onPress }) {
         <Text style={styles.smallArrow} accessibilityElementsHidden>↗</Text>
       </View>
       <Text style={styles.cardTitle}>{job.title}</Text>
+      {job.demo ? <Text style={styles.location}>Eksempelopslag · Kan ikke søges</Text> : null}
       <Text style={styles.cardDescription} numberOfLines={3}>{job.description}</Text>
       {job.ageGroup ? <Text style={styles.location}>Aldersgruppe: {job.ageGroup}</Text> : null}
       <JobTags tags={job.tags} />

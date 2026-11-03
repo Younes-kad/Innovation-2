@@ -1,11 +1,14 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import JobCard from '../components/JobCard';
 import { colors, styles } from '../styles';
 import { jobTags } from '../data/jobTags';
+import { Button } from '../components/ProfileUI';
+import { useActivity } from '../data/ActivityContext';
 
-export default function CompanyScreen({ navigation, jobs, onCreateJob, loading, storageError, onRetry }) {
+export default function CompanyScreen({ navigation, user, jobs, onCreateJob, loading, storageError, onRetry, onLogout, legacyJobs, onMigrate, migrationError }) {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -16,6 +19,8 @@ export default function CompanyScreen({ navigation, jobs, onCreateJob, loading, 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const submitting = useRef(false);
+  const { counts } = useActivity();
+  useFocusEffect(useCallback(() => { onRetry(); }, []));
 
   async function submitJob() {
     // Afvis dobbelte tryk og tomme obligatoriske felter før lagring.
@@ -28,13 +33,13 @@ export default function CompanyScreen({ navigation, jobs, onCreateJob, loading, 
     setSaving(true);
     setError('');
     try {
-      // App.js gemmer opslaget med AsyncStorage. Ryd kun felterne ved succes.
+      // Ryd kun felterne, når opslaget er gemt på serveren.
       await onCreateJob({ title: title.trim(), description: description.trim(), location: location.trim(), ageGroup: ageGroup.trim(), tags });
       setShowForm(false);
       setTitle(''); setDescription(''); setLocation(''); setAgeGroup(''); setTags([]);
-      setMessage('Opslaget er gemt på denne enhed og vises nu også i joboversigten.');
-    } catch {
-      setError('Opslaget kunne ikke gemmes. Dine felter er bevaret – prøv igen.');
+      setMessage('Opslaget er gemt og vises nu også i joboversigten.');
+    } catch (e) {
+      setError(e.message);
     } finally {
       submitting.current = false;
       setSaving(false);
@@ -42,18 +47,12 @@ export default function CompanyScreen({ navigation, jobs, onCreateJob, loading, 
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.pageContent}>
-        <Pressable accessibilityRole="button" style={styles.roleSwitch} onPress={() => navigation.goBack()}><Text style={styles.smallButtonText}>← Tilbage til login</Text></Pressable>
-        <View style={styles.hero}>
-          <Text style={styles.heroLabel}>VIRKSOMHEDENS OVERBLIK</Text>
-          <Text style={styles.heroTitle}>Velkommen,{'\n'}MC El & Teknik</Text>
-          <Text style={styles.heroDescription}>Giv unge uden tidligere erhvervserfaring en god start, med særligt fokus på gymnasieelever og unge i udsatte positioner. Tilbyd enkle praktiske opgaver og vejledning fra en erfaren kollega.</Text>
-        </View>
-        <View style={styles.demoNotice}>
-          <Text style={styles.noteTitle}>Demonstration · Fiktive oplysninger</Text>
-          <Text style={styles.noteText}>MC El & Teknik bruges som eksempelvirksomhed. Jobopslag og personer er eksempler, ikke virkelige oplysninger om virksomheden.</Text>
-        </View>
+        <Text style={styles.eyebrow}>{user.name}</Text><Text style={styles.pageTitle}>Jeres jobmuligheder</Text><Text style={styles.roleDescription}>Opret jobs, og find jeres næste kollega. Ansatte finder I under Profil.</Text>
+        <View style={{ marginBottom: 20 }}><Button secondary title={`Ansøgninger${counts.jobs ? ` · ${counts.jobs} nye` : ''} →`} onPress={() => navigation.navigate('Applications')} /></View>
+        {migrationError ? <Text style={styles.error}>{migrationError}</Text> : null}
+        {legacyJobs.length > 0 ? <View style={styles.demoNotice}><Text style={styles.noteTitle}>{legacyJobs.length} ældre lokale opslag</Text><Text style={styles.noteText}>Importér kun, hvis opslagene tilhører din virksomhed. Den lokale kopi bevares.</Text><Button secondary title="Importér til denne virksomhed" disabled={saving} onPress={async () => { setSaving(true); try { await onMigrate(); setMessage('Opslagene er importeret.'); } catch (e) { setMessage(e.message); } finally { setSaving(false); } }} /></View> : null}
         <Pressable accessibilityRole="button" disabled={loading || !!storageError} style={({ pressed }) => [styles.primaryButton, (pressed || loading || !!storageError) && styles.pressed]} onPress={() => { setError(''); setMessage(''); setShowForm(true); }}>
           <Text style={styles.primaryButtonText}>Opret nyt jobopslag</Text>
         </Pressable>
@@ -62,13 +61,7 @@ export default function CompanyScreen({ navigation, jobs, onCreateJob, loading, 
         {message ? <Text style={styles.feedbackText} accessibilityLiveRegion="polite">{message}</Text> : null}
         <View style={styles.companySectionHeading}><Text style={styles.sectionTitle}>Aktive jobopslag</Text><Text style={styles.count}>{jobs.length} opslag</Text></View>
         {jobs.map(job => <JobCard key={job.id} job={job} onPress={() => navigation.navigate('Job', { id: job.id })} />)}
-        <View style={styles.companySectionHeading}><Text style={styles.sectionTitle}>Tilknyttede unge</Text><Text style={styles.count}>2 unge</Text></View>
-        <View style={styles.card}>
-          <Text style={styles.noteTitle}>Emil, 19 år</Text><Text style={styles.noteText}>Praktisk hjælper · Følger en erfaren elektriker</Text>
-          <View style={styles.divider} />
-          <Text style={styles.noteTitle}>Sara, 22 år</Text><Text style={styles.noteText}>Hjælper med værktøj og materialer</Text>
-        </View>
-        <Text style={styles.helperCentered}>Fiktive personer · Overblikket er kun visuelt.{'\n'}Nye opslag gemmes kun på denne enhed.</Text>
+        {!jobs.length && !loading ? <Text style={styles.body}>Opret jeres første jobopslag. Ansøgninger fra unge samles under Ansøgninger.</Text> : null}
       </ScrollView>
       <Modal visible={showForm} animationType="slide" onRequestClose={() => { if (!submitting.current) setShowForm(false); }}>
         <SafeAreaView style={styles.screen}>
@@ -76,7 +69,7 @@ export default function CompanyScreen({ navigation, jobs, onCreateJob, loading, 
             <ScrollView contentContainerStyle={styles.pageContent} keyboardShouldPersistTaps="handled">
               <Pressable accessibilityRole="button" disabled={saving} style={styles.roleSwitch} onPress={() => setShowForm(false)}><Text style={styles.smallButtonText}>← Annuller</Text></Pressable>
               <Text style={styles.sectionTitle}>Opret nyt jobopslag</Text>
-              <Text style={styles.roleDescription}>MC El & Teknik · Demonstrationsopslag</Text>
+              <Text style={styles.roleDescription}>{user.name}</Text>
               <View style={styles.form}>
                 <View style={styles.field}><Text style={styles.inputLabel}>Jobtitel</Text><TextInput accessibilityLabel="Jobtitel" style={styles.input} value={title} onChangeText={setTitle} editable={!saving} placeholder="Fx praktisk hjælper" placeholderTextColor={colors.placeholder} /></View>
                 <View style={styles.field}><Text style={styles.inputLabel}>Kort beskrivelse</Text><TextInput accessibilityLabel="Kort beskrivelse" style={[styles.input, styles.textArea]} value={description} onChangeText={setDescription} editable={!saving} multiline textAlignVertical="top" placeholder="Hvad skal den unge hjælpe med?" placeholderTextColor={colors.placeholder} /></View>
@@ -105,7 +98,7 @@ export default function CompanyScreen({ navigation, jobs, onCreateJob, loading, 
                 {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
                 <Pressable accessibilityRole="button" disabled={saving} style={({ pressed }) => [styles.primaryButton, (pressed || saving) && styles.pressed]} onPress={submitJob}><Text style={styles.primaryButtonText}>{saving ? 'Gemmer …' : 'Opret opslag'}</Text></Pressable>
               </View>
-              <Text style={styles.helperCentered}>Opslaget gemmes lokalt og vises for jobsøgeren på samme enhed.</Text>
+              <Text style={styles.helperCentered}>Opslaget gemmes i databasen og kan søges af unge på Foothold.</Text>
             </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
