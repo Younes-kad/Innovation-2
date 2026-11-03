@@ -21,6 +21,7 @@ export default function JobScreen({ navigation, route, jobs, canApply }) {
           </View>
           <Text style={styles.eyebrow}>{job.company}</Text>
           <Text style={styles.pageTitle}>{job.title}</Text>
+          {job.fictional && <Text style={styles.noteText}>Fiktivt job · Du kan prøve ansøgningsflowet. Ingen rigtig arbejdsgiver modtager ansøgningen.</Text>}
           <View style={styles.metaRow}>
             <Text style={styles.location}>{job.location}</Text>
             <View style={[styles.badge, { backgroundColor: job.background }]}>

@@ -6,8 +6,9 @@
   "scripts": {
     "start": "node scripts/start.cjs",
     "server": "node server/index.cjs",
-    "test": "node server/server.test.cjs && node server/feed.test.cjs",
+    "test": "node server/server.test.cjs && node server/feed.test.cjs && node server/apiAddress.test.cjs && node server/demo.test.cjs",
     "test:ui": "node scripts/navigation-smoke.cjs",
+    "test:ui:demo": "node scripts/navigation-smoke.cjs --demo",
     "android": "node scripts/start.cjs --android",
     "ios": "node scripts/start.cjs --ios",
     "web": "node scripts/start.cjs --web"
@@ -18,15 +19,17 @@
     "@react-navigation/bottom-tabs": "^7.21.0",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/native-stack": "^7.3.26",
-    "expo": "~57.0.0",
-    "expo-image-picker": "~57.0.20",
-    "expo-status-bar": "~57.0.1",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-native": "0.86.3",
-    "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "~4.26.0",
-    "react-native-web": "^0.21.0"
+    "expo": "~58.0.0",
+    "expo-constants": "~58.0.14",
+    "expo-font": "~58.0.11",
+    "expo-image-picker": "~58.0.10",
+    "expo-status-bar": "~58.0.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-screens": "~4.30.1",
+    "react-native-web": "^0.21.4"
   },
   "devDependencies": {
     "playwright": "^1.64.1"

@@ -7,6 +7,7 @@ import { styles, colors } from '../styles';
 import { api } from '../data/api';
 import { useActivity } from '../data/ActivityContext';
 import { Avatar, Button, Field, dateLabel } from '../components/ProfileUI';
+import JobCard from '../components/JobCard';
 
 export default function FeedScreen({ navigation, user }) {
   const [posts, setPosts] = useState([]);
@@ -49,6 +50,6 @@ export default function FeedScreen({ navigation, user }) {
       </View>}
     </>}
     ListEmptyComponent={!loading ? <View style={styles.card}><Ionicons name="people-outline" size={36} color={colors.green} /><Text style={styles.cardTitle}>Plads til nye historier</Text><Text style={styles.body}>Når dem, du følger, deler et opslag med følgere, dukker det op her.</Text></View> : null}
-    renderItem={({ item: p }) => <View style={styles.card}><Pressable accessibilityRole="button" style={styles.companyRow} onPress={() => navigation.navigate('Profile', { userId: p.author.id })}><Avatar name={p.author.name} uri={p.author.avatar} /><View style={styles.flex}><Text style={styles.company}>{p.author.name}</Text><Text style={styles.location}>{dateLabel(p.createdAt)}</Text></View><Ionicons name="arrow-forward" size={18} color={colors.muted} /></Pressable><Text style={styles.body}>{p.text}</Text>{p.image ? <Image source={{ uri: p.image }} accessibilityLabel="Billede i opslag" style={{ width: '100%', height: 260, borderRadius: 16, marginTop: 18 }} resizeMode="contain" /> : null}</View>}
+    renderItem={({ item: p }) => p.type === 'job' ? <JobCard job={p.job} onPress={() => navigation.navigate('JobsTab', { screen: 'Job', params: { id: p.job.id }, initial: false })} /> : <View style={styles.card}><Pressable accessibilityRole="button" accessibilityLabel={`Åbn ${p.author.name}s profil`} style={styles.companyRow} onPress={() => navigation.navigate('Profile', { userId: p.author.id })}><Avatar name={p.author.name} uri={p.author.avatar} /><View style={styles.flex}><Text style={styles.company}>{p.author.name}</Text>{p.author.headline ? <Text style={styles.location}>{p.author.headline}</Text> : null}<Text style={styles.location}>{dateLabel(p.createdAt)}</Text></View><Ionicons name="arrow-forward" size={18} color={colors.muted} /></Pressable>{p.fictional && <Text style={styles.location}>Fiktivt inspirationsopslag</Text>}<Text style={styles.body}>{p.text}</Text>{p.image ? <Image source={{ uri: p.image }} accessibilityLabel="Billede i opslag" style={{ width: '100%', height: 260, borderRadius: 16, marginTop: 18 }} resizeMode="contain" /> : null}</View>}
   /></SafeAreaView>;
 }

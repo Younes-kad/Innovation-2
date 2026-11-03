@@ -39,9 +39,9 @@ export default function ApplyScreen({ navigation, route, jobs, user }) {
         <View style={styles.success}>
           <View style={styles.successIcon}><Text style={styles.successCheck}>✓</Text></View>
           <Text style={styles.eyebrow}>FØRSTE SKRIDT ER TAGET</Text>
-          <Text style={styles.successTitle} accessibilityRole="header" accessibilityLiveRegion="polite">Din ansøgning er sendt ✓</Text>
-          <Text style={styles.successText}>Tak, {name.trim()}! Din ansøgning som {job.title} ligger nu hos {job.company}.</Text>
-          <Text style={styles.helperCentered}>Virksomheden kan se din ansøgning og de profiloplysninger, du har valgt at dele.</Text>
+          <Text style={styles.successTitle} accessibilityRole="header" accessibilityLiveRegion="polite">{job.fictional ? 'Din demoansøgning er gemt ✓' : 'Din ansøgning er sendt ✓'}</Text>
+          <Text style={styles.successText}>{job.fictional ? `Tak, ${name.trim()}! Du har prøvet at søge jobbet som ${job.title}. Ansøgningen er gemt i Foothold, men sendes ikke til en rigtig arbejdsgiver.` : `Tak, ${name.trim()}! Din ansøgning som ${job.title} ligger nu hos ${job.company}.`}</Text>
+          <Text style={styles.helperCentered}>{job.fictional ? 'Dette er et fiktivt job og ikke en virkelig ledig stilling.' : 'Virksomheden kan se din ansøgning og de profiloplysninger, du har valgt at dele.'}</Text>
           <Pressable accessibilityRole="button" style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={() => navigation.popTo('JobList')}>
             <Text style={styles.primaryButtonText}>Tilbage til jobs  →</Text>
           </Pressable>
@@ -62,6 +62,7 @@ export default function ApplyScreen({ navigation, route, jobs, user }) {
             <View style={styles.flex}><Text style={styles.company}>{job.title}</Text><Text style={styles.location}>{job.company} · {job.location}</Text></View>
           </View>
           <View style={styles.form}>
+            {job.fictional && <Text style={styles.noteText}>Du søger et fiktivt job. Din demoansøgning gemmes kun i Foothold og sendes ikke til en rigtig arbejdsgiver.</Text>}
             <View style={styles.field}>
               <Text style={styles.inputLabel}>Navn</Text>
               <TextInput accessibilityLabel="Navn" style={styles.input} placeholder="Dit fulde navn" placeholderTextColor={colors.placeholder} value={name} onChangeText={setName} autoComplete="name" />

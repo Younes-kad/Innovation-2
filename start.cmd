@@ -21,6 +21,8 @@ if not exist "node_modules\@react-native-async-storage\async-storage\package.jso
 if not exist "node_modules\expo-image-picker\package.json" goto install
 if not exist "node_modules\@react-navigation\bottom-tabs\package.json" goto install
 if not exist "node_modules\@expo\vector-icons\package.json" goto install
+node -e "const p=require('./package.json');const e=require('expo/package.json');process.exit(e.version.split('.')[0]===p.dependencies.expo.match(/[0-9]+/)[0]?0:1)"
+if errorlevel 1 goto install
 goto start
 
 :install

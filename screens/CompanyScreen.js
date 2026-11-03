@@ -8,7 +8,7 @@ import { jobTags } from '../data/jobTags';
 import { Button } from '../components/ProfileUI';
 import { useActivity } from '../data/ActivityContext';
 
-export default function CompanyScreen({ navigation, user, jobs, onCreateJob, loading, storageError, onRetry, onLogout, legacyJobs, onMigrate, migrationError }) {
+export default function CompanyScreen({ navigation, user, jobs, demoJobs = [], onCreateJob, loading, storageError, onRetry, onLogout, legacyJobs, onMigrate, migrationError }) {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -62,6 +62,7 @@ export default function CompanyScreen({ navigation, user, jobs, onCreateJob, loa
         <View style={styles.companySectionHeading}><Text style={styles.sectionTitle}>Aktive jobopslag</Text><Text style={styles.count}>{jobs.length} opslag</Text></View>
         {jobs.map(job => <JobCard key={job.id} job={job} onPress={() => navigation.navigate('Job', { id: job.id })} />)}
         {!jobs.length && !loading ? <Text style={styles.body}>Opret jeres første jobopslag. Ansøgninger fra unge samles under Ansøgninger.</Text> : null}
+        {demoJobs.length > 0 && <><View style={styles.companySectionHeading}><Text style={styles.sectionTitle}>Fiktive jobeksempler</Text><Text style={styles.count}>{demoJobs.length} jobs</Text></View>{demoJobs.map(job => <JobCard key={job.id} job={job} onPress={() => navigation.navigate('Job', { id: job.id })} />)}</>}
       </ScrollView>
       <Modal visible={showForm} animationType="slide" onRequestClose={() => { if (!submitting.current) setShowForm(false); }}>
         <SafeAreaView style={styles.screen}>

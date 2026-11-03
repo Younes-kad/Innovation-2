@@ -25,18 +25,24 @@ Web: `npm.cmd run web`. Opret først en virksomhedskonto og et job, log ud, opre
 
 Telefonnumre accepteres som 8 cifre eller med international landekode (fx +45). Kravene kontrolleres både i formularen og på serveren. Telefonnumre og fødselsdato gemmes separat som private kontooplysninger og deles ikke via profiler eller ansøgninger. Numrene registreres uden SMS-verifikation. Eksisterende konti kan stadig logge ind; de nye felter kræves ved ny konto-oprettelse.
 
-På telefonen skal API-adressen være computerens lokale IP-adresse. Sæt den inden opstart, fx:
+I Expo Go finder appen automatisk backend på samme computeradresse som Expo-serveren, på port 3001. Telefon og computer skal være på samme lokale netværk. Ved en anden backendadresse eller Expo-tunnel kan du angive API-adressen inden opstart, fx:
 
 ```powershell
 $env:EXPO_PUBLIC_API_URL = 'http://192.168.1.20:3001'
 npm.cmd start
 ```
 
-Scan QR-koden med en kompatibel Expo Go. Telefon og computer skal være på samme Wi-Fi; port 3001 skal kunne nås fra telefonen. Projektet bruger SDK 57. Billedvælgeren understøtter JPG, PNG og WebP op til 5 MB. Sessionsnøglen ligger kun i hukommelsen: efter genindlæsning logger man ind igen.
+Ved “Ingen forbindelse til serveren” viser fejlbeskeden nu den anvendte API-adresse. Start med `.\start.cmd --clear`, som starter både backend og Expo. Åbn `http://<computerens-IP>:3001/health` i telefonens browser; svaret skal være `{"ok":true}`. Kan telefonen ikke åbne adressen, skal netværksadgang eller firewall til port 3001 kontrolleres. Expo-tunnelen videresender ikke automatisk backend-porten; brug en API-adresse, telefonen kan nå, via `EXPO_PUBLIC_API_URL`.
+
+Scan QR-koden med Expo Go til SDK 58. Telefon og computer skal være på samme Wi-Fi; port 3001 skal kunne nås fra telefonen. Projektet bruger Expo SDK 58 med React Native 0.88 og React 19.3. Billedvælgeren understøtter JPG, PNG og WebP op til 5 MB. Sessionsnøglen ligger kun i hukommelsen: efter genindlæsning logger man ind igen.
+
+Efter opgradering fra SDK 57: stop den gamle server med Ctrl+C, kør `npm.cmd install`, og start igen med `.\start.cmd --clear`. Det rydder Metro-cachen. Opgradér også Expo Go på telefonen til en version, der understøtter SDK 58. Fremgangsmåden følger [Expos opgraderingsvejledning](https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/).
 
 ## Funktioner
 
 - Fast bundnavigation med tre faner: Hjem, Job og Profil for unge; Feed, Job og Profil for virksomheder. Fanerne bevarer navigationen, så bundmenuen bliver stående i jobdetaljer, ansøgninger og profilvisninger.
+- To fiktive inspirationsopslag og to fiktive, søgbare jobs oprettes én gang i databasen: Cafémedhjælper og Junior SoMe-hjælper. Alle fire vises i feedet uden krav om at følge en profil; kun de to jobs vises i joboversigten. De er tydeligt markeret som fiktive, og demoansøgninger gemmes i appen uden at blive sendt til en rigtig arbejdsgiver. Eksisterende indhold bevares, og genstart opretter ingen dubletter.
+- Inspirationsopslagene er skrevet af demoprofilerne Sofie Nielsen (første fritidsjob på café) og Malik Jensen (erfaringer fra et SoMe-projekt). Deres navn i feedet åbner en fiktiv profil med præsentation, erfaring, uddannelse og kompetencer, som kan følges. Demoindholdet blandes som job → personligt opslag → job → personligt opslag. En engangsmigrering flytter de tidligere generiske demoopslag til de to profiler uden at ændre rigtige brugeres indhold.
 - Hjem/Feed viser de nyeste opslag fra profiler, man følger. Find profiler, følg/stop med at følge, og åbn deres profil direkte fra feedet. Både unge og virksomheder kan oprette opslag.
 - Privat som udgangspunkt: slå “Min profil må findes og følges af andre” til under Rediger profil for at vise navn, billede og overskrift i profilsøgningen. Hvert opslag har et særskilt valg om deling med følgere. Eksisterende private opslag offentliggøres ikke automatisk. Profilens øvrige sektioner, telefonnumre og løn er beskyttet som før.
 - Røde badges viser ulæste opslag i feedet, nye jobs (unge), nye ansøgninger (virksomhed), ansættelsestilbud (unge) og svar på tilbud (virksomhed). De opdateres ved skærmskift/genåbning og hvert 20. sekund, mens appen er aktiv. Det er badges i appen, ikke pushbeskeder. Læsemarkeringer gemmes på kontoen og bevares efter genstart.

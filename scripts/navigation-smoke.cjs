@@ -6,7 +6,8 @@ const path = require('node:path');
 const { chromium } = require('playwright');
 const { createServer } = require('../server/index.cjs');
 const root = path.resolve(__dirname, '..', 'dist');
-const apiServer = createServer(':memory:');
+const withDemo = process.argv.includes('--demo');
+const apiServer = createServer(':memory:', { seedDemo: withDemo });
 const webServer = http.createServer(async (req, res) => {
   const target = path.resolve(root, '.' + decodeURIComponent(new URL(req.url, 'http://localhost').pathname));
   if (!target.startsWith(root + path.sep) && target !== root) { res.writeHead(403); return res.end(); }
@@ -66,6 +67,30 @@ async function listen(server) { await new Promise(resolve => server.listen(0, '1
     }
     await page.goto(webBase);
     await login('young@example.dk');
+    if (withDemo) {
+      await visibleText('Cafémedhjælper – dit første fritidsjob');
+      assert.equal(await page.getByText('Fiktivt inspirationsopslag', { exact: true }).count(), 2);
+      await page.getByRole('button', { name: 'Åbn Sofie Nielsens profil', exact: true }).click();
+      await visibleText('FIKTIV DEMOPROFIL');
+      await page.getByRole('button', { name: 'Erfaring', exact: true }).click();
+      await visibleText('Cafémedhjælper');
+      await page.getByRole('button', { name: '+ Følg profil', exact: true }).click();
+      await visibleText('Følger ✓ · Stop med at følge');
+      await tab('Hjem').click();
+      await page.getByRole('button', { name: 'Se job: Cafémedhjælper – dit første fritidsjob' }).click();
+      await page.getByRole('button', { name: 'Ansøg nu →' }).click();
+      await page.getByLabel('Kort om dig', { exact: true }).fill('Jeg vil gerne prøve at arbejde på café.');
+      await page.getByRole('button', { name: 'Send ansøgning →' }).click();
+      await visibleText('Din demoansøgning er gemt ✓');
+      await page.getByRole('button', { name: 'Tilbage til jobs →' }).click();
+      await page.getByRole('button', { name: 'Se job: Junior SoMe-hjælper' }).waitFor();
+      assert.equal(await page.getByText('Fiktivt inspirationsopslag', { exact: true }).isVisible().catch(() => false), false);
+      const stored = await api('/applications', 'GET', null, young.token);
+      assert.ok(stored.some(a => a.jobId === 'foothold-demo-job-cafe'));
+      await checkNav(); assert.deepEqual(errors, []);
+      console.log('PASS: demo posts and jobs in feed, job navigation from feed, demo application saved and jobs listed without social posts.');
+      return;
+    }
     await visibleText('Min første dag på arbejde!'); await checkNav();
     await tab('Job').getByText('2', { exact: true }).waitFor();
     await tab('Job').click(); await visibleText('Praktisk hjælper'); await visibleText('Butiksmedhjælper');

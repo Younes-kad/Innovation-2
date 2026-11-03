@@ -5,6 +5,7 @@ const { mkdirSync } = require('node:fs');
 const path = require('node:path');
 const { ageOnDate, normalizePhone } = require('../shared/registration');
 const { validateTerms } = require('../shared/employment');
+const { seedDemo, DEMO_COMPANY, DEMO_PERSON_IDS } = require('./demo.cjs');
 
 const statuses = ['Modtaget', 'Under behandling', 'Accepteret', 'Afvist'];
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
@@ -15,7 +16,7 @@ const image = value => {
   if (typeof value !== 'string' || value.length > 7000000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value)) fail('Vælg et JPG-, PNG- eller WebP-billede på højst 5 MB.');
   return value;
 };
-function createServer(dbPath = process.env.DB_PATH || path.join(__dirname, 'storage', 'foothold.sqlite')) {
+function createServer(dbPath = process.env.DB_PATH || path.join(__dirname, 'storage', 'foothold.sqlite'), options = {}) {
   if (dbPath !== ':memory:') mkdirSync(path.dirname(dbPath), { recursive: true });
   const db = new DatabaseSync(dbPath);
   db.exec(`PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;
@@ -39,6 +40,7 @@ function createServer(dbPath = process.env.DB_PATH || path.join(__dirname, 'stor
   const publicUser = user => ({ id: user.id, email: user.email, role: user.role, name: user.name });
   const getProfile = id => JSON.parse(one('SELECT data FROM profiles WHERE user_id=?', id)?.data || '{}');
   const emptyProfile = name => ({ name, headline: '', location: '', about: '', avatar: '', discoverable: false, experiences: [], education: [], skills: [], visibility: { presentation: false, experiences: false, education: false, skills: false } });
+  if (options.seedDemo !== false) seedDemo(db);
   for (const u of all('SELECT id,name FROM users WHERE id NOT IN (SELECT user_id FROM profiles)')) run('INSERT INTO profiles VALUES(?,?)', u.id, JSON.stringify(emptyProfile(u.name)));
   const recordContent = (kind, id) => run('INSERT OR IGNORE INTO content_activity(kind,content_id) VALUES(?,?)', kind, id);
   for (const p of all('SELECT id FROM posts ORDER BY rowid')) recordContent('post', p.id);
@@ -53,18 +55,28 @@ function createServer(dbPath = process.env.DB_PATH || path.join(__dirname, 'stor
     return rows.filter(row => {
       if (row.user_id === viewer.id) return !onlyFollowed;
       const p = getProfile(row.user_id), post = JSON.parse(row.data);
+      if (DEMO_PERSON_IDS.includes(row.user_id) && post.fictional === true) return true;
       return p.discoverable === true && post.followers === true && !!one('SELECT 1 FROM follows WHERE follower_id=? AND followed_id=?', viewer.id, row.user_id) || !!related(viewer, row.user_id) && post.shared === true;
     }).map(row => {
       const p = getProfile(row.user_id), author = one('SELECT id,name,role FROM users WHERE id=?', row.user_id);
       return { ...JSON.parse(row.data), id: row.id, seq: row.seq, createdAt: row.created_at, author: { ...author, avatar: p.discoverable || p.visibility?.presentation || row.user_id === viewer.id ? p.avatar : '', headline: p.discoverable ? p.headline : '' } };
     });
   }
+  function feedItems(viewer) {
+    const regular = visiblePosts(viewer, null, true).filter(p => !DEMO_PERSON_IDS.includes(p.author.id));
+    const demoPosts = all("SELECT activity.seq,posts.* FROM posts JOIN content_activity activity ON activity.kind='post' AND activity.content_id=posts.id WHERE posts.user_id IN (?,?,?) ORDER BY activity.seq", DEMO_COMPANY, ...DEMO_PERSON_IDS).filter(p => JSON.parse(p.data).fictional === true).map(p => { const u = one('SELECT id,name,role FROM users WHERE id=?', p.user_id), profile = getProfile(p.user_id); return { ...JSON.parse(p.data), id: p.id, seq: p.seq, createdAt: p.created_at, author: { ...u, avatar: profile.avatar, headline: profile.headline } }; });
+    const demoJobs = all("SELECT activity.seq,jobs.* FROM jobs JOIN content_activity activity ON activity.kind='job' AND activity.content_id=jobs.id WHERE jobs.company_id=?", DEMO_COMPANY).filter(j => JSON.parse(j.data).fictional === true).map(j => ({ id: j.id, seq: j.seq, type: 'job', job: { ...JSON.parse(j.data), id: j.id, companyId: j.company_id } }));
+    const posts = [...regular, ...demoPosts], jobs = demoJobs.sort((a,b) => a.seq - b.seq);
+    const mixed = [];
+    for (let i = 0; i < Math.max(posts.length, jobs.length); i++) { if (jobs[i]) mixed.push(jobs[i]); if (posts[i]) mixed.push(posts[i]); }
+    return mixed;
+  }
   function notificationState(viewer) {
     const seen = Object.fromEntries(all('SELECT section,seen_seq FROM notification_reads WHERE user_id=?', viewer.id).map(r => [r.section,r.seen_seq]));
-    const feed = visiblePosts(viewer, null, true);
+    const feed = feedItems(viewer);
     const maxNotice = one('SELECT COALESCE(MAX(seq),0) AS seq FROM notifications WHERE user_id=?', viewer.id).seq;
     const jobsCursor = viewer.role === 'young' ? one("SELECT COALESCE(MAX(seq),0) AS seq FROM content_activity WHERE kind='job'").seq : maxNotice;
-    return { counts: { feed: feed.filter(p => p.seq > (seen.feed || 0)).length, jobs: viewer.role === 'young' ? one("SELECT count(*) AS n FROM jobs JOIN content_activity activity ON activity.kind='job' AND activity.content_id=jobs.id WHERE activity.seq>?", seen.jobs || 0).n : one("SELECT count(*) AS n FROM notifications WHERE user_id=? AND section='jobs' AND seq>?", viewer.id, seen.jobs || 0).n, profile: one("SELECT count(*) AS n FROM notifications WHERE user_id=? AND section='profile' AND seq>?", viewer.id, seen.profile || 0).n }, cursors: { feed: one("SELECT COALESCE(MAX(seq),0) AS seq FROM content_activity WHERE kind='post'").seq, jobs: jobsCursor, profile: maxNotice } };
+    return { counts: { feed: feed.filter(p => p.seq > (seen.feed || 0)).length, jobs: viewer.role === 'young' ? one("SELECT count(*) AS n FROM jobs JOIN content_activity activity ON activity.kind='job' AND activity.content_id=jobs.id WHERE activity.seq>?", seen.jobs || 0).n : one("SELECT count(*) AS n FROM notifications WHERE user_id=? AND section='jobs' AND seq>?", viewer.id, seen.jobs || 0).n, profile: one("SELECT count(*) AS n FROM notifications WHERE user_id=? AND section='profile' AND seq>?", viewer.id, seen.profile || 0).n }, cursors: { feed: one('SELECT COALESCE(MAX(seq),0) AS seq FROM content_activity').seq, jobs: jobsCursor, profile: maxNotice } };
   }
   const role = (user, expected) => { if (user.role !== expected) fail('Du har ikke adgang til denne handling.', 403); };
   const origins = (process.env.ALLOWED_ORIGINS || 'http://localhost:8081,http://localhost:19006').split(',');
@@ -140,7 +152,7 @@ function createServer(dbPath = process.env.DB_PATH || path.join(__dirname, 'stor
         run('INSERT INTO notification_reads VALUES(?,?,?) ON CONFLICT(user_id,section) DO UPDATE SET seen_seq=MAX(seen_seq,excluded.seen_seq)', user.id, body.section, body.cursor);
         return reply({ ok: true });
       }
-      if (route === '/feed' && method === 'GET') return reply(visiblePosts(user, null, true));
+      if (route === '/feed' && method === 'GET') return reply(feedItems(user));
       if (route === '/people' && method === 'GET') {
         const q = text(url.searchParams.get('q'), 80).toLocaleLowerCase('da-DK');
         return reply(all('SELECT id,name,role FROM users WHERE id<>?', user.id).filter(u => canFind(user, u.id) && (!q || u.name.toLocaleLowerCase('da-DK').includes(q))).slice(0,100).map(u => { const p = getProfile(u.id); return { ...u, avatar: p.discoverable || p.visibility?.presentation ? p.avatar : '', headline: p.discoverable ? p.headline : '', following: !!one('SELECT 1 FROM follows WHERE follower_id=? AND followed_id=?', user.id, u.id) }; }));
@@ -278,8 +290,9 @@ function createServer(dbPath = process.env.DB_PATH || path.join(__dirname, 'stor
           const p = getProfile(id);
           const posts = visiblePosts(user, id);
           if (owner) return reply({ ...p, id, posts, owner: true });
-          const v = related(user, id) ? p.visibility || {} : {};
-          return reply({ id, name: target.name, role: target.role, ...(v.presentation ? { headline: p.headline, location: p.location, about: p.about, avatar: p.avatar } : p.discoverable ? { headline: p.headline, avatar: p.avatar } : {}), experiences: v.experiences ? p.experiences : [], education: v.education ? p.education : [], skills: v.skills ? p.skills : [], posts, owner: false, following: !!one('SELECT 1 FROM follows WHERE follower_id=? AND followed_id=?', user.id, id), restricted: !v.presentation });
+          const fictional = DEMO_PERSON_IDS.includes(id);
+          const v = fictional ? { presentation: true, experiences: true, education: true, skills: true } : related(user, id) ? p.visibility || {} : {};
+          return reply({ id, name: target.name, role: target.role, fictional, ...(v.presentation ? { headline: p.headline, location: p.location, about: p.about, avatar: p.avatar } : p.discoverable ? { headline: p.headline, avatar: p.avatar } : {}), experiences: v.experiences ? p.experiences : [], education: v.education ? p.education : [], skills: v.skills ? p.skills : [], posts, owner: false, following: !!one('SELECT 1 FROM follows WHERE follower_id=? AND followed_id=?', user.id, id), restricted: !v.presentation });
         }
         if (method === 'PUT') {
           if (!owner) fail('Kun ejeren må redigere profilen.', 403);

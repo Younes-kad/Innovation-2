@@ -32,7 +32,7 @@ function FeedNavigator({ user }) {
 }
 function JobsNavigator({ user, jobs, examples, ...props }) {
   return <Stack.Navigator screenOptions={stackOptions}>
-    <Stack.Screen name="JobList" options={{ headerShown: user.role === 'company', title: 'Jeres jobs' }}>{p => user.role === 'company' ? <CompanyScreen {...p} {...props} user={user} jobs={jobs.filter(j => j.companyId === user.id)} /> : <HomeScreen {...p} jobs={[...jobs, ...examples]} onRefresh={props.onRetry} refreshing={props.loading} storageError={props.storageError} />}</Stack.Screen>
+    <Stack.Screen name="JobList" options={{ headerShown: user.role === 'company', title: 'Jeres jobs' }}>{p => user.role === 'company' ? <CompanyScreen {...p} {...props} user={user} jobs={jobs.filter(j => j.companyId === user.id)} demoJobs={jobs.filter(j => j.fictional)} /> : <HomeScreen {...p} jobs={[...jobs, ...examples]} onRefresh={props.onRetry} refreshing={props.loading} storageError={props.storageError} />}</Stack.Screen>
     <Stack.Screen name="Job" options={{ title: 'Jobmulighed' }}>{p => <JobScreen {...p} jobs={[...jobs, ...examples]} canApply={user.role === 'young'} />}</Stack.Screen>
     {user.role === 'young' && <Stack.Screen name="Apply" options={{ title: 'Din ansøgning' }}>{p => <ApplyScreen {...p} jobs={jobs} user={user} />}</Stack.Screen>}
     {user.role === 'company' && <Stack.Screen name="Applications" options={{ title: 'Ansøgninger og tilbud' }}>{p => <ApplicationsScreen {...p} jobs={jobs.filter(j => j.companyId === user.id)} />}</Stack.Screen>}

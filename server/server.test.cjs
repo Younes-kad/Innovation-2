@@ -33,7 +33,7 @@ test('registration validation: age boundary, invalid dates and phone formats', (
 test('profile → application → company → hire, privacy, isolation and restart persistence', async () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'foothold-test-'));
   const dbPath = path.join(directory, 'test.sqlite');
-  let server = createServer(dbPath);
+  let server = createServer(dbPath, { seedDemo: false });
   async function start() { await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); return `http://127.0.0.1:${server.address().port}`; }
   let base = await start();
   async function request(route, method = 'GET', body, token, expected = 200) {
@@ -193,7 +193,7 @@ test('profile → application → company → hire, privacy, isolation and resta
     assert.equal(contact.birth_date, registration.birthDate);
     assert.equal(stored.prepare('SELECT parent_phone FROM user_contacts WHERE user_id=?').get(young.user.id).parent_phone, null);
     stored.close();
-    server = createServer(dbPath); base = await start();
+    server = createServer(dbPath, { seedDemo: false }); base = await start();
     const persistedEmployees = await request('/employees', 'GET', null, company.token);
     assert.equal(persistedEmployees.length, 2);
     assert.ok(persistedEmployees.some(e => e.userId === young.user.id));

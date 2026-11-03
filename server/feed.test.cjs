@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const { createServer } = require('./index.cjs');
 
 test('followed feed, opt-in privacy, company posts and persistent unread cursors', async () => {
-  const server = createServer(':memory:');
+  const server = createServer(':memory:', { seedDemo: false });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   async function req(route, method = 'GET', data, token, status = 200) {
