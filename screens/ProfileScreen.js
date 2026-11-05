@@ -8,6 +8,7 @@ import { api } from '../data/api';
 import { styles } from '../styles';
 import { Avatar, Button, Field, Toggle, dateLabel } from '../components/ProfileUI';
 import { useActivity } from '../data/ActivityContext';
+import { profilePayload } from '../shared/profile';
 
 const blankEntry = type => ({
   id: `${Date.now()}-${Math.random()}`,
@@ -552,13 +553,8 @@ export default function ProfileScreen({ route, user, navigation, onLogout }) {
                     disabled={busy}
                     onPress={() =>
                       perform(async () => {
-                        await api('/profiles/me', 'PUT', {
-                          ...draft,
-                          skills: draft.skillsText
-                            .split(',')
-                            .map(s => s.trim())
-                            .filter(Boolean),
-                        });
+                        // RETTELSE: Send kun profilfelterne, ikke opslag med billeder (se shared/profile.js).
+                        await api('/profiles/me', 'PUT', profilePayload(draft));
                         setDraft(null);
                       }, 'Din profil er opdateret.')
                     }

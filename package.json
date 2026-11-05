@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node scripts/start.cjs",
     "server": "node server/index.cjs",
-    "test": "node server/server.test.cjs && node server/feed.test.cjs && node server/apiAddress.test.cjs && node server/demo.test.cjs",
+    "test": "node server/server.test.cjs && node server/feed.test.cjs && node server/apiAddress.test.cjs && node server/demo.test.cjs && node server/rettelser.test.cjs",
     "test:ui": "node scripts/navigation-smoke.cjs",
     "test:ui:demo": "node scripts/navigation-smoke.cjs --demo",
     "test:ui:feed": "node scripts/navigation-smoke.cjs --feed",
