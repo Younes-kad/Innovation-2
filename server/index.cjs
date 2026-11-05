@@ -35,7 +35,7 @@ function createServer(
     CREATE TABLE IF NOT EXISTS profiles(user_id TEXT PRIMARY KEY REFERENCES users(id),data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY,company_id TEXT REFERENCES users(id),data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS applications(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),job_id TEXT NOT NULL REFERENCES jobs(id),company_id TEXT NOT NULL REFERENCES users(id),status TEXT NOT NULL,created_at TEXT NOT NULL,data TEXT NOT NULL,UNIQUE(user_id,job_id));
-    CREATE TABLE IF NOT EXISTS employees(id TEXT PRIMARY KEY,company_id TEXT NOT NULL REFERENCES users(id),user_id TEXT NOT NULL REFERENCES users(id),job_id TEXT NOT NULL REFERENCES jobs(id),created_at TEXT NOT NULL,UNIQUE(company_id,user_id));
+    CREATE TABLE IF NOT EXISTS employees(id TEXT PRIMARY KEY,company_id TEXT NOT NULL REFERENCES users(id),user_id TEXT NOT NULL REFERENCES users(id),job_id TEXT NOT NULL REFERENCES jobs(id),created_at TEXT NOT NULL,UNIQUE(company_id,user_id,job_id));
     CREATE TABLE IF NOT EXISTS employment_offers(id TEXT PRIMARY KEY,application_id TEXT NOT NULL REFERENCES applications(id),company_id TEXT NOT NULL REFERENCES users(id),user_id TEXT NOT NULL REFERENCES users(id),status TEXT NOT NULL DEFAULT 'pending',terms TEXT NOT NULL,created_at TEXT NOT NULL,responded_at TEXT,added_to_profile INTEGER NOT NULL DEFAULT 0);
     CREATE UNIQUE INDEX IF NOT EXISTS one_pending_offer ON employment_offers(company_id,user_id) WHERE status='pending';
     CREATE TABLE IF NOT EXISTS posts(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),created_at TEXT NOT NULL,data TEXT NOT NULL);
@@ -47,6 +47,20 @@ function createServer(
   const run = (sql, ...args) => db.prepare(sql).run(...args);
   const one = (sql, ...args) => db.prepare(sql).get(...args);
   const all = (sql, ...args) => db.prepare(sql).all(...args);
+  // RETTELSE (genansættelse): Databaser fra før rettelsen tillod kun én ansættelse pr. person pr.
+  // virksomhed. SQLite kan ikke ændre en UNIQUE-regel, så tabellen genskabes med data bevaret.
+  if (
+    one("SELECT sql FROM sqlite_master WHERE name='employees'").sql.includes(
+      'UNIQUE(company_id,user_id)'
+    )
+  ) {
+    db.exec(`BEGIN;
+      CREATE TABLE employees_new(id TEXT PRIMARY KEY,company_id TEXT NOT NULL REFERENCES users(id),user_id TEXT NOT NULL REFERENCES users(id),job_id TEXT NOT NULL REFERENCES jobs(id),created_at TEXT NOT NULL,UNIQUE(company_id,user_id,job_id));
+      INSERT INTO employees_new SELECT id,company_id,user_id,job_id,created_at FROM employees;
+      DROP TABLE employees;
+      ALTER TABLE employees_new RENAME TO employees;
+      COMMIT;`);
+  }
   const publicUser = user => ({ id: user.id, email: user.email, role: user.role, name: user.name });
   const getProfile = id =>
     JSON.parse(one('SELECT data FROM profiles WHERE user_id=?', id)?.data || '{}');
@@ -523,8 +537,17 @@ function createServer(
         );
         if (!a) fail('Ansøgningen blev ikke fundet.', 404);
         if (a.status !== 'Accepteret') fail('Accepter ansøgningen før du sender et tilbud.');
-        if (one('SELECT id FROM employees WHERE company_id=? AND user_id=?', user.id, a.user_id))
-          fail('Personen er allerede registreret som ansat.', 409);
+        // RETTELSE (genansættelse): Spærringen gælder kun samme job, så en virksomhed kan ansætte
+        // den samme person igen på et andet job.
+        if (
+          one(
+            'SELECT id FROM employees WHERE company_id=? AND user_id=? AND job_id=?',
+            user.id,
+            a.user_id,
+            a.job_id
+          )
+        )
+          fail('Personen er allerede ansat på dette job.', 409);
         if (
           one(
             "SELECT id FROM employment_offers WHERE company_id=? AND user_id=? AND status='pending'",
@@ -563,6 +586,7 @@ function createServer(
             return {
               id: o.id,
               applicationId: o.application_id,
+              jobId: a.job_id,
               userId: o.user_id,
               name: one('SELECT name FROM users WHERE id=?', o.user_id).name,
               company: one('SELECT name FROM users WHERE id=?', o.company_id).name,
@@ -603,9 +627,10 @@ function createServer(
           if (!addLater && body.decision === 'accepted') {
             if (
               one(
-                'SELECT id FROM employees WHERE company_id=? AND user_id=?',
+                'SELECT id FROM employees WHERE company_id=? AND user_id=? AND job_id=?',
                 o.company_id,
-                user.id
+                user.id,
+                a.job_id
               )
             )
               fail('Ansættelsen findes allerede.', 409);
@@ -669,6 +694,7 @@ function createServer(
             e => ({
               id: e.id,
               userId: e.user_id,
+              jobId: e.job_id,
               name: one('SELECT name FROM users WHERE id=?', e.user_id).name,
               avatar: getProfile(e.user_id).visibility?.presentation
                 ? getProfile(e.user_id).avatar

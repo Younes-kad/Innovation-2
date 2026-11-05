@@ -4,6 +4,10 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { createServer } = require('./index.cjs');
 const { profilePayload } = require('../shared/profile');
+const { DatabaseSync } = require('node:sqlite');
+const { mkdtempSync, rmSync } = require('node:fs');
+const { tmpdir } = require('node:os');
+const path = require('node:path');
 
 async function setup() {
   const server = createServer(':memory:', { seedDemo: false });
@@ -155,5 +159,80 @@ test('tilbud: afvises ansøgningen, trækkes tilbuddet tilbage og kan ikke godke
     );
   } finally {
     await close();
+  }
+});
+
+test('genansættelse: samme person kan ansættes på et andet job, men ikke to gange på samme', async () => {
+  const { request, register, close } = await setup();
+  try {
+    const company = await register('firma@example.dk', 'company');
+    const young = await register('ung@example.dk', 'young');
+    const first = await acceptedApplication(request, company, young, 'Job 1');
+    const offer = await request(
+      '/employment-offers',
+      'POST',
+      { applicationId: first.id, ...terms },
+      company.token,
+      201
+    );
+    await request(
+      `/employment-offers/${offer.id}`,
+      'POST',
+      { decision: 'accepted', addToProfile: false },
+      young.token
+    );
+    await request(
+      '/employment-offers',
+      'POST',
+      { applicationId: first.id, ...terms },
+      company.token,
+      409
+    );
+    const second = await acceptedApplication(request, company, young, 'Job 2');
+    const again = await request(
+      '/employment-offers',
+      'POST',
+      { applicationId: second.id, ...terms },
+      company.token,
+      201
+    );
+    await request(
+      `/employment-offers/${again.id}`,
+      'POST',
+      { decision: 'accepted', addToProfile: false },
+      young.token
+    );
+    const employees = await request('/employees', 'GET', null, company.token);
+    assert.equal(employees.length, 2);
+    assert.notEqual(employees[0].jobId, employees[1].jobId);
+    const offers = await request('/employment-offers', 'GET', null, company.token);
+    assert.ok(employees.every(e => offers.some(o => o.jobId === e.jobId)));
+  } finally {
+    await close();
+  }
+});
+
+test('genansættelse: en gammel database får den nye regel, og data bevares', async () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'foothold-migration-'));
+  const dbPath = path.join(directory, 'gammel.sqlite');
+  const old = new DatabaseSync(dbPath);
+  old.exec(`CREATE TABLE users(id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,password TEXT NOT NULL,salt TEXT NOT NULL,role TEXT NOT NULL,name TEXT NOT NULL);
+    CREATE TABLE jobs(id TEXT PRIMARY KEY,company_id TEXT REFERENCES users(id),data TEXT NOT NULL);
+    CREATE TABLE employees(id TEXT PRIMARY KEY,company_id TEXT NOT NULL REFERENCES users(id),user_id TEXT NOT NULL REFERENCES users(id),job_id TEXT NOT NULL REFERENCES jobs(id),created_at TEXT NOT NULL,UNIQUE(company_id,user_id));
+    INSERT INTO users VALUES('c','c@x.dk','p','s','company','C'),('y','y@x.dk','p','s','young','Y');
+    INSERT INTO jobs VALUES('j','c','{}');
+    INSERT INTO employees VALUES('e','c','y','j','2026-01-01');`);
+  old.close();
+  const server = createServer(dbPath, { seedDemo: false });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  await new Promise(resolve => server.close(resolve));
+  const migrated = new DatabaseSync(dbPath, { readOnly: true });
+  try {
+    const { sql } = migrated.prepare("SELECT sql FROM sqlite_master WHERE name='employees'").get();
+    assert.ok(sql.includes('UNIQUE(company_id,user_id,job_id)'));
+    assert.equal(migrated.prepare('SELECT id FROM employees').get().id, 'e');
+  } finally {
+    migrated.close();
+    rmSync(directory, { recursive: true, force: true });
   }
 });

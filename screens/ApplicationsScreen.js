@@ -216,7 +216,11 @@ export default function ApplicationsScreen({ navigation, route, jobs }) {
               </Text>
             )}
             {employees.map(e => {
-              const offer = offers.find(o => o.userId === e.userId && o.status === 'accepted');
+              // RETTELSE (genansættelse): Find vilkårene for netop dette job, da en person kan være
+              // ansat på flere job.
+              const offer = offers.find(
+                o => o.userId === e.userId && o.jobId === e.jobId && o.status === 'accepted'
+              );
               return (
                 <View key={e.id} style={styles.card}>
                   {person(e)}
@@ -273,7 +277,7 @@ export default function ApplicationsScreen({ navigation, route, jobs }) {
                   ))}
                 </View>
                 {feedback}
-                {employees.some(e => e.userId === selected.userId) ? (
+                {employees.some(e => e.userId === selected.userId && e.jobId === selected.jobId) ? (
                   <Text style={styles.noteTitle}>Allerede registreret som ansat</Text>
                 ) : offers.some(o => o.userId === selected.userId && o.status === 'pending') ? (
                   <Text style={styles.noteTitle}>
