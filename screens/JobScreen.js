@@ -9,7 +9,18 @@ export default function JobScreen({ navigation, route, jobs, canApply }) {
   const job = jobs.find(item => item.id === id);
 
   if (!job) {
-    return <View style={styles.empty}><Text style={styles.sectionTitle}>Jobbet blev ikke fundet</Text><Pressable accessibilityRole="button" style={styles.primaryButton} onPress={() => navigation.popTo('JobList')}><Text style={styles.primaryButtonText}>Tilbage til jobs</Text></Pressable></View>;
+    return (
+      <View style={styles.empty}>
+        <Text style={styles.sectionTitle}>Jobbet blev ikke fundet</Text>
+        <Pressable
+          accessibilityRole="button"
+          style={styles.primaryButton}
+          onPress={() => navigation.popTo('JobList')}
+        >
+          <Text style={styles.primaryButtonText}>Tilbage til jobs</Text>
+        </Pressable>
+      </View>
+    );
   }
 
   return (
@@ -21,7 +32,12 @@ export default function JobScreen({ navigation, route, jobs, canApply }) {
           </View>
           <Text style={styles.eyebrow}>{job.company}</Text>
           <Text style={styles.pageTitle}>{job.title}</Text>
-          {job.fictional && <Text style={styles.noteText}>Fiktivt job · Du kan prøve ansøgningsflowet. Ingen rigtig arbejdsgiver modtager ansøgningen.</Text>}
+          {job.fictional && (
+            <Text style={styles.noteText}>
+              Fiktivt job · Du kan prøve ansøgningsflowet. Ingen rigtig arbejdsgiver modtager
+              ansøgningen.
+            </Text>
+          )}
           <View style={styles.metaRow}>
             <Text style={styles.location}>{job.location}</Text>
             <View style={[styles.badge, { backgroundColor: job.background }]}>
@@ -38,18 +54,32 @@ export default function JobScreen({ navigation, route, jobs, canApply }) {
           <Text style={styles.sectionTitle}>Det kommer du til at lave</Text>
           {job.tasks.map((task, index) => (
             <View key={task} style={styles.taskRow}>
-              <View style={styles.taskNumber}><Text style={styles.taskNumberText}>{index + 1}</Text></View>
+              <View style={styles.taskNumber}>
+                <Text style={styles.taskNumberText}>{index + 1}</Text>
+              </View>
               <Text style={styles.taskText}>{task}</Text>
             </View>
           ))}
         </View>
         <View style={styles.noteCard}>
           <Text style={styles.noteTitle}>Dit første skridt behøver ikke være stort.</Text>
-          <Text style={styles.noteText}>Fortæl kort om dig selv, og hvorfor jobbet vækker din nysgerrighed.</Text>
+          <Text style={styles.noteText}>
+            Fortæl kort om dig selv, og hvorfor jobbet vækker din nysgerrighed.
+          </Text>
         </View>
-        {canApply && !job.demo ? <Pressable accessibilityRole="button" style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]} onPress={() => navigation.navigate('Apply', { id: job.id })}>
-          <Text style={styles.primaryButtonText}>Ansøg nu  →</Text>
-        </Pressable> : <Text style={styles.noteTitle}>{job.demo ? 'Eksempelopslag · Kan ikke søges' : 'Dit virksomhedsopslag'}</Text>}
+        {canApply && !job.demo ? (
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+            onPress={() => navigation.navigate('Apply', { id: job.id })}
+          >
+            <Text style={styles.primaryButtonText}>Ansøg nu →</Text>
+          </Pressable>
+        ) : (
+          <Text style={styles.noteTitle}>
+            {job.demo ? 'Eksempelopslag · Kan ikke søges' : 'Dit virksomhedsopslag'}
+          </Text>
+        )}
         <Text style={styles.helperCentered}>En kort ansøgning er en god start.</Text>
       </ScrollView>
     </SafeAreaView>

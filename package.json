@@ -10,6 +10,8 @@
     "test:ui": "node scripts/navigation-smoke.cjs",
     "test:ui:demo": "node scripts/navigation-smoke.cjs --demo",
     "test:ui:feed": "node scripts/navigation-smoke.cjs --feed",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "android": "node scripts/start.cjs --android",
     "ios": "node scripts/start.cjs --ios",
     "web": "node scripts/start.cjs --web"
@@ -33,6 +35,7 @@
     "react-native-web": "^0.21.4"
   },
   "devDependencies": {
-    "playwright": "^1.64.1"
+    "playwright": "^1.64.1",
+    "prettier": "3.9.10"
   }
 }

@@ -15,12 +15,18 @@ export default function JobCard({ job, onPress }) {
             <Text style={styles.location}>{job.location}</Text>
           </View>
         </View>
-        <Text style={styles.smallArrow} accessibilityElementsHidden>↗</Text>
+        <Text style={styles.smallArrow} accessibilityElementsHidden>
+          ↗
+        </Text>
       </View>
       <Text style={styles.cardTitle}>{job.title}</Text>
       {job.demo ? <Text style={styles.location}>Eksempelopslag · Kan ikke søges</Text> : null}
-      {job.fictional ? <Text style={styles.location}>Fiktivt job · Prøv at sende en demoansøgning</Text> : null}
-      <Text style={styles.cardDescription} numberOfLines={3}>{job.description}</Text>
+      {job.fictional ? (
+        <Text style={styles.location}>Fiktivt job · Prøv at sende en demoansøgning</Text>
+      ) : null}
+      <Text style={styles.cardDescription} numberOfLines={3}>
+        {job.description}
+      </Text>
       {job.ageGroup ? <Text style={styles.location}>Aldersgruppe: {job.ageGroup}</Text> : null}
       <JobTags tags={job.tags} />
       <View style={styles.cardFooter}>
@@ -33,7 +39,7 @@ export default function JobCard({ job, onPress }) {
           onPress={onPress}
           style={({ pressed }) => [styles.smallButton, pressed && styles.pressed]}
         >
-          <Text style={styles.smallButtonText}>Se job  →</Text>
+          <Text style={styles.smallButtonText}>Se job →</Text>
         </Pressable>
       </View>
     </View>
