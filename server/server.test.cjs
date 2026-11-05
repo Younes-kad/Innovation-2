@@ -275,7 +275,7 @@ test('profile → application → company → hire, privacy, isolation and resta
       otherCompany.token,
       404
     );
-    await request('/employees', 'POST', { applicationId: a.id }, company.token, 400);
+    await request('/employees', 'POST', { applicationId: a.id }, company.token, 404);
     await request(`/applications/${a.id}`, 'PATCH', { status: 'Under behandling' }, company.token);
     await request(`/applications/${a.id}`, 'PATCH', { status: 'Ugyldig' }, company.token, 400);
     await request(`/applications/${a.id}`, 'PATCH', { status: 'Afvist' }, company.token);
@@ -288,7 +288,7 @@ test('profile → application → company → hire, privacy, isolation and resta
       startDate: '2026-12-01',
     };
     // Direct employer-side registration no longer bypasses the employee's consent.
-    await request('/employees', 'POST', { applicationId: a.id }, company.token, 400);
+    await request('/employees', 'POST', { applicationId: a.id }, company.token, 404);
     await request(
       '/employment-offers',
       'POST',

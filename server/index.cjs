@@ -486,10 +486,6 @@ function createServer(
         run('UPDATE applications SET status=? WHERE id=?', body.status, a.id);
         return reply({ ok: true });
       }
-      if (route === '/employees' && method === 'POST') {
-        role(user, 'company');
-        fail('Send et ansættelsestilbud. Den unge skal godkende, før ansættelsen registreres.');
-      }
       if (route === '/employment-offers' && method === 'POST') {
         role(user, 'company');
         const a = one(
