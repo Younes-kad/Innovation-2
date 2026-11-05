@@ -475,12 +475,6 @@ test('profile → application → company → hire, privacy, isolation and resta
     );
     await request(`/posts/${privatePost.id}`, 'DELETE', null, young.token);
     assert.equal((await request('/profiles/me', 'GET', null, young.token)).posts.length, 1);
-    const legacy = {
-      jobs: [{ id: 'local-old', title: 'Gammelt job', description: 'Bevares', location: 'Aarhus' }],
-    };
-    await request('/jobs/import', 'POST', legacy, company.token);
-    await request('/jobs/import', 'POST', legacy, company.token);
-    assert.equal((await request('/jobs', 'GET', null, company.token)).length, 2);
     await new Promise(resolve => server.close(resolve));
     const stored = new DatabaseSync(dbPath, { readOnly: true });
     const contact = stored

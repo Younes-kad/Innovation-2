@@ -423,37 +423,6 @@ function createServer(
         recordContent('job', id);
         return reply({ ...data, id, companyId: user.id }, 201);
       }
-      if (route === '/jobs/import' && method === 'POST') {
-        role(user, 'company');
-        // Explicit migration: keep local source intact, deduplicate within this company.
-        if (!Array.isArray(body.jobs) || body.jobs.length > 500) fail('Ugyldige jobdata.');
-        db.exec('BEGIN');
-        try {
-          for (const job of body.jobs) {
-            const id = `${user.id}:${required(job.id, 100)}`;
-            const data = {
-              title: required(job.title, 160),
-              description: required(job.description),
-              location: required(job.location, 160),
-              ageGroup: text(job.ageGroup, 40),
-              tags: Array.isArray(job.tags) ? job.tags.map(t => text(t, 60)).slice(0, 20) : [],
-              tasks: [required(job.description)],
-              company: user.name,
-              initials: user.name.slice(0, 2),
-              category: 'Jobmulighed',
-              color: '#204D3D',
-              background: '#DCEBB6',
-            };
-            run('INSERT OR IGNORE INTO jobs VALUES(?,?,?)', id, user.id, JSON.stringify(data));
-            recordContent('job', id);
-          }
-          db.exec('COMMIT');
-        } catch (error) {
-          db.exec('ROLLBACK');
-          throw error;
-        }
-        return reply({ ok: true });
-      }
       if (route === '/applications' && method === 'POST') {
         role(user, 'young');
         const job = one('SELECT * FROM jobs WHERE id=?', required(body.jobId, 200));

@@ -27,9 +27,6 @@ export default function CompanyScreen({
   storageError,
   onRetry,
   onLogout,
-  legacyJobs,
-  onMigrate,
-  migrationError,
 }) {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
@@ -97,31 +94,6 @@ export default function CompanyScreen({
             onPress={() => navigation.navigate('Applications')}
           />
         </View>
-        {migrationError ? <Text style={styles.error}>{migrationError}</Text> : null}
-        {legacyJobs.length > 0 ? (
-          <View style={styles.demoNotice}>
-            <Text style={styles.noteTitle}>{legacyJobs.length} ældre lokale opslag</Text>
-            <Text style={styles.noteText}>
-              Importér kun, hvis opslagene tilhører din virksomhed. Den lokale kopi bevares.
-            </Text>
-            <Button
-              secondary
-              title="Importér til denne virksomhed"
-              disabled={saving}
-              onPress={async () => {
-                setSaving(true);
-                try {
-                  await onMigrate();
-                  setMessage('Opslagene er importeret.');
-                } catch (e) {
-                  setMessage(e.message);
-                } finally {
-                  setSaving(false);
-                }
-              }}
-            />
-          </View>
-        ) : null}
         <Pressable
           accessibilityRole="button"
           disabled={loading || !!storageError}

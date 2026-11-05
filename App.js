@@ -5,7 +5,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, styles } from './styles';
 import { demoJobs, companyJobs } from './data/jobs';
 import { api, setToken } from './data/api';
@@ -175,8 +174,6 @@ export default function App() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [legacyJobs, setLegacyJobs] = useState([]);
-  const [migrationError, setMigrationError] = useState('');
   async function refresh() {
     setLoading(true);
     setError('');
@@ -201,18 +198,6 @@ export default function App() {
     setToken(result.token);
     setUser(result.user);
     setJobs([]);
-    setLegacyJobs([]);
-    setMigrationError('');
-    if (result.user.role === 'company') {
-      try {
-        const stored = await AsyncStorage.getItem('foothold.companyJobs.v2');
-        const old = stored ? JSON.parse(stored) : [];
-        if (!Array.isArray(old)) throw new Error();
-        setLegacyJobs(old);
-      } catch {
-        setMigrationError('Ældre lokale opslag kunne ikke læses. De er bevaret på enheden.');
-      }
-    }
     await refresh();
   }
   async function logout() {
@@ -225,15 +210,9 @@ export default function App() {
     setUser(null);
     setJobs([]);
     setError('');
-    setLegacyJobs([]);
   }
   async function createJob(fields) {
     await api('/jobs', 'POST', fields);
-    await refresh();
-  }
-  async function migrate() {
-    await api('/jobs/import', 'POST', { jobs: legacyJobs });
-    setLegacyJobs([]);
     await refresh();
   }
   const examples = [...companyJobs, ...demoJobs].map(j => ({ ...j, demo: true }));
@@ -252,9 +231,6 @@ export default function App() {
               storageError={error}
               onRetry={refresh}
               onLogout={logout}
-              legacyJobs={legacyJobs}
-              onMigrate={migrate}
-              migrationError={migrationError}
             />
           ) : (
             <Stack.Navigator screenOptions={stackOptions}>

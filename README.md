@@ -59,7 +59,6 @@ Efter opgradering fra SDK 57: stop den gamle server med Ctrl+C, kør `npm.cmd in
 - Oprettelse, redigering og sletning af egne opslag med billeder, dato og nyeste først.
 - Privatliv pr. profilsektion og pr. opslag. Alt er privat som udgangspunkt. Kun ejeren kan redigere. Virksomhedsdelte profilsektioner og opslag kræver en ansøgnings- eller ansættelsesrelation; deling med følgere er et separat tilvalg. Navn og indsendte ansøgningsoplysninger deles med modtagervirksomheden.
 - Eksisterende eksempelopslag er bevaret og markeret; de kan ikke søges, da de ikke tilhører en registreret virksomhed.
-- Ældre jobopslag under AsyncStorage-nøglen `foothold.companyJobs.v2` kan importeres via virksomhedens dashboard. Brugeren vælger, hvilken virksomhed de tilhører. Originalerne bevares, og gentagen import til samme virksomhed opretter ingen dubletter.
 
 Filtrene i både joboversigten og Ansøgninger er funktionelle.
 
