@@ -762,10 +762,22 @@ function createServer(
         }
         if (method === 'PUT') {
           if (!owner) fail('Kun ejeren må redigere profilen.', 403);
+          // RETTELSE (falsk erfaring): Id'er med "employment-" betyder, at erfaringen stammer fra et
+          // godkendt tilbud, og kun serveren må oprette dem. Findes id'et ikke allerede på profilen,
+          // får posten et nyt id. Findes det, kan kun beskrivelsen ændres, så virksomhed, stilling og
+          // periode stadig passer med tilbuddet. Posten kan godt fjernes helt.
+          const confirmed = new Map(
+            (getProfile(id).experiences || [])
+              .filter(e => e.id.startsWith('employment-'))
+              .map(e => [e.id, e])
+          );
           function entries(values, type) {
             if (!Array.isArray(values) || values.length > 50) fail('Højst 50 poster pr. sektion.');
             return values
               .map(e => {
+                const entryId = text(e.id, 100);
+                if (type === 'experience' && confirmed.has(entryId))
+                  return { ...confirmed.get(entryId), description: text(e.description, 2000) };
                 const start = required(e.start, 7),
                   end = text(e.end, 7);
                 if (
@@ -774,7 +786,7 @@ function createServer(
                 )
                   fail('Brug ÅÅÅÅ-MM og en slutdato efter startdatoen.');
                 return {
-                  id: text(e.id, 100) || randomUUID(),
+                  id: entryId && !entryId.startsWith('employment-') ? entryId : randomUUID(),
                   organization: required(e.organization, 160),
                   title: required(e.title, 160),
                   start,

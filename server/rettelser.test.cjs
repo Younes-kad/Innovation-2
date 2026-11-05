@@ -286,3 +286,73 @@ test('alder: mindst 14 år for at oprette konto, og tilbud følger timegrænsern
     await close();
   }
 });
+
+test('erfaring: id fra godkendte tilbud kan ikke forfalskes, og job kan ikke ændres', async () => {
+  const { request, register, close } = await setup();
+  try {
+    const company = await register('firma@example.dk', 'company');
+    const young = await register('ung@example.dk', 'young');
+    const profile = await request('/profiles/me', 'GET', null, young.token);
+    const fake = {
+      id: 'employment-falsk',
+      organization: 'Google',
+      title: 'Direktør',
+      start: '2026-01',
+      end: '',
+      type: 'Job',
+    };
+    await request('/profiles/me', 'PUT', { ...profile, experiences: [fake] }, young.token);
+    const [saved] = (await request('/profiles/me', 'GET', null, young.token)).experiences;
+    assert.equal(saved.organization, 'Google');
+    assert.ok(!saved.id.startsWith('employment-'));
+
+    const application = await acceptedApplication(request, company, young, 'Rigtigt job');
+    const offer = await request(
+      '/employment-offers',
+      'POST',
+      { applicationId: application.id, ...terms },
+      company.token,
+      201
+    );
+    await request(
+      `/employment-offers/${offer.id}`,
+      'POST',
+      { decision: 'accepted', addToProfile: true },
+      young.token
+    );
+    const withJob = await request('/profiles/me', 'GET', null, young.token);
+    const real = withJob.experiences.find(e => e.id === `employment-${offer.id}`);
+    const changed = {
+      ...real,
+      organization: 'Google',
+      title: 'Direktør',
+      description: 'Min tekst',
+    };
+    await request(
+      '/profiles/me',
+      'PUT',
+      { ...withJob, experiences: withJob.experiences.map(e => (e.id === real.id ? changed : e)) },
+      young.token
+    );
+    const after = (await request('/profiles/me', 'GET', null, young.token)).experiences.find(
+      e => e.id === real.id
+    );
+    assert.equal(after.organization, 'firma');
+    assert.equal(after.title, 'Rigtigt job');
+    assert.equal(after.description, 'Min tekst');
+    // Den unge kan stadig fjerne jobbet fra sin profil.
+    await request(
+      '/profiles/me',
+      'PUT',
+      { ...withJob, experiences: withJob.experiences.filter(e => e.id !== real.id) },
+      young.token
+    );
+    assert.ok(
+      !(await request('/profiles/me', 'GET', null, young.token)).experiences.some(
+        e => e.id === real.id
+      )
+    );
+  } finally {
+    await close();
+  }
+});

@@ -27,69 +27,80 @@ function EntryEditor({ title, entries, onChange, education, disabled }) {
   return (
     <View style={styles.form}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {entries.map((e, index) => (
-        <View key={e.id} style={styles.card}>
-          <View style={styles.form}>
-            {!education && (
-              <View style={styles.tagOptions}>
-                {['Job', 'Frivilligt arbejde', 'Projekt', 'Andet'].map(type => (
-                  <Button
-                    key={type}
-                    secondary
-                    disabled={disabled}
-                    title={`${type}${e.type === type ? ' ✓' : ''}`}
-                    onPress={() => update(index, 'type', type)}
-                  />
-                ))}
-              </View>
-            )}
-            <Field
-              label={education ? 'Uddannelsessted' : 'Virksomhed / organisation'}
-              value={e.organization}
-              onChangeText={v => update(index, 'organization', v)}
-              editable={!disabled}
-              maxLength={160}
-            />
-            <Field
-              label={education ? 'Uddannelse' : 'Rolle / projekttitel'}
-              value={e.title}
-              onChangeText={v => update(index, 'title', v)}
-              editable={!disabled}
-              maxLength={160}
-            />
-            <Field
-              label="Start (ÅÅÅÅ-MM)"
-              placeholder="2026-08"
-              value={e.start}
-              onChangeText={v => update(index, 'start', v)}
-              editable={!disabled}
-              maxLength={7}
-            />
-            <Field
-              label="Slut (ÅÅÅÅ-MM) · Tom = nuværende"
-              placeholder="2026-11"
-              value={e.end}
-              onChangeText={v => update(index, 'end', v)}
-              editable={!disabled}
-              maxLength={7}
-            />
-            <Field
-              label="Beskrivelse"
-              value={e.description}
-              onChangeText={v => update(index, 'description', v)}
-              editable={!disabled}
-              multiline
-              maxLength={2000}
-            />
-            <Button
-              secondary
-              title="Fjern denne post"
-              disabled={disabled}
-              onPress={() => onChange(entries.filter((_, i) => i !== index))}
-            />
+      {entries.map((e, index) => {
+        // RETTELSE (falsk erfaring): Job fra et godkendt tilbud kan kun få ændret beskrivelsen.
+        // Serveren håndhæver det samme (se PUT /profiles i server/index.cjs).
+        const locked = !education && String(e.id).startsWith('employment-');
+        return (
+          <View key={e.id} style={styles.card}>
+            <View style={styles.form}>
+              {locked && (
+                <Text style={styles.helper}>
+                  Fra et godkendt tilbud. Du kan skrive en beskrivelse eller fjerne jobbet, men ikke
+                  ændre resten.
+                </Text>
+              )}
+              {!education && !locked && (
+                <View style={styles.tagOptions}>
+                  {['Job', 'Frivilligt arbejde', 'Projekt', 'Andet'].map(type => (
+                    <Button
+                      key={type}
+                      secondary
+                      disabled={disabled}
+                      title={`${type}${e.type === type ? ' ✓' : ''}`}
+                      onPress={() => update(index, 'type', type)}
+                    />
+                  ))}
+                </View>
+              )}
+              <Field
+                label={education ? 'Uddannelsessted' : 'Virksomhed / organisation'}
+                value={e.organization}
+                onChangeText={v => update(index, 'organization', v)}
+                editable={!disabled && !locked}
+                maxLength={160}
+              />
+              <Field
+                label={education ? 'Uddannelse' : 'Rolle / projekttitel'}
+                value={e.title}
+                onChangeText={v => update(index, 'title', v)}
+                editable={!disabled && !locked}
+                maxLength={160}
+              />
+              <Field
+                label="Start (ÅÅÅÅ-MM)"
+                placeholder="2026-08"
+                value={e.start}
+                onChangeText={v => update(index, 'start', v)}
+                editable={!disabled && !locked}
+                maxLength={7}
+              />
+              <Field
+                label="Slut (ÅÅÅÅ-MM) · Tom = nuværende"
+                placeholder="2026-11"
+                value={e.end}
+                onChangeText={v => update(index, 'end', v)}
+                editable={!disabled && !locked}
+                maxLength={7}
+              />
+              <Field
+                label="Beskrivelse"
+                value={e.description}
+                onChangeText={v => update(index, 'description', v)}
+                editable={!disabled}
+                multiline
+                maxLength={2000}
+              />
+              <Button
+                secondary
+                title="Fjern denne post"
+                disabled={disabled}
+                onPress={() => onChange(entries.filter((_, i) => i !== index))}
+              />
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
       <Button
         secondary
         title={education ? '+ Tilføj uddannelse' : '+ Tilføj erfaring'}
