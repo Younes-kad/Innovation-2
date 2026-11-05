@@ -1,4 +1,9 @@
 // Shared validation keeps the registration form and API in agreement.
+
+// RETTELSE (aldersgrænse): Foothold kræver, at unge er mindst 14 år. Reglen ligger her, så
+// formularen og serveren altid bruger samme grænse.
+const MIN_AGE = 14;
+
 function todayISO() {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Europe/Copenhagen',
@@ -33,4 +38,4 @@ function normalizePhone(value) {
   return /^(?:\d{8}|\+[1-9]\d{7,14})$/.test(phone) ? phone : null;
 }
 
-module.exports = { todayISO, ageOnDate, normalizePhone };
+module.exports = { MIN_AGE, todayISO, ageOnDate, normalizePhone };

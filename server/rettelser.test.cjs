@@ -236,3 +236,53 @@ test('genansættelse: en gammel database får den nye regel, og data bevares', a
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test('alder: mindst 14 år for at oprette konto, og tilbud følger timegrænserne', async () => {
+  const { request, register, close } = await setup();
+  const yearsAgo = years => `${new Date().getUTCFullYear() - years}-01-01`;
+  try {
+    const signup = {
+      name: 'Barn',
+      role: 'young',
+      phone: '12345678',
+      parentPhone: '11223344',
+      password: 'secure-password-123',
+    };
+    const refused = await request(
+      '/auth/register',
+      'POST',
+      {
+        ...signup,
+        email: 'barn@example.dk',
+        birthDate: `${new Date().getUTCFullYear() - 13}-12-31`,
+      },
+      null,
+      400
+    );
+    assert.match(refused.error, /mindst 14 år/);
+    const company = await register('firma@example.dk', 'company');
+    // Start lige efter nytår, så personen har den forventede alder på startdatoen.
+    const start = `${new Date().getUTCFullYear()}-01-02`;
+    const fourteen = await register('fjorten@example.dk', 'young', yearsAgo(14));
+    const first = await acceptedApplication(request, company, fourteen, 'Job 14');
+    const offerFor = (application, hoursPerWeek, expected) =>
+      request(
+        '/employment-offers',
+        'POST',
+        { applicationId: application.id, ...terms, startDate: start, hoursPerWeek },
+        company.token,
+        expected
+      );
+    assert.match((await offerFor(first, 13, 400)).error, /højst 12 timer/);
+    await offerFor(first, 12, 201);
+    const sixteen = await register('seksten@example.dk', 'young', yearsAgo(16));
+    const second = await acceptedApplication(request, company, sixteen, 'Job 16');
+    assert.match((await offerFor(second, 41, 400)).error, /højst 40 timer/);
+    await offerFor(second, 40, 201);
+    const adult = await register('voksen@example.dk', 'young', yearsAgo(20));
+    const third = await acceptedApplication(request, company, adult, 'Job 20');
+    await offerFor(third, 45, 201);
+  } finally {
+    await close();
+  }
+});

@@ -50,4 +50,16 @@ function validateTerms(input) {
     endDate,
   };
 }
-module.exports = { durations, wageUnits, validateTerms };
+// RETTELSE (timer efter alder): Tilbud må ikke overskride Arbejdstilsynets grænser for unge.
+// Grænserne er hentet 5. nov. 2026 fra at.dk ("Unges arbejdstid, pauser og fridøgn"):
+// - 14 år: højst 12 timer i skoleuger og 35 timer i uger helt uden skole.
+// - 15-17 år: højst 40 timer. Har den unge ikke afsluttet 9. klasse, er grænsen 12 timer i skoleuger.
+// Et tilbud har kun ét timetal for hele perioden, og appen ved ikke, hvornår der er skolefri eller
+// om 9. klasse er afsluttet. Derfor bruges 12 timer for 14-årige og 40 timer for 15-17-årige, og
+// tilbudsformularen minder virksomheden om reglen for skoleuger.
+function maxHoursForAge(age) {
+  if (age === null || age >= 18) return null;
+  return age < 15 ? 12 : 40;
+}
+
+module.exports = { durations, wageUnits, validateTerms, maxHoursForAge };

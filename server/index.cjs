@@ -3,8 +3,8 @@ const { DatabaseSync } = require('node:sqlite');
 const { randomUUID, randomBytes, scryptSync, timingSafeEqual } = require('node:crypto');
 const { mkdirSync } = require('node:fs');
 const path = require('node:path');
-const { ageOnDate, normalizePhone } = require('../shared/registration');
-const { validateTerms } = require('../shared/employment');
+const { MIN_AGE, ageOnDate, normalizePhone } = require('../shared/registration');
+const { validateTerms, maxHoursForAge } = require('../shared/employment');
 const { seedDemo, DEMO_COMPANY, DEMO_PERSON_IDS } = require('./demo.cjs');
 
 const statuses = ['Modtaget', 'Under behandling', 'Accepteret', 'Afvist'];
@@ -299,6 +299,9 @@ function createServer(
           const age = body.role === 'young' ? ageOnDate(body.birthDate) : null;
           if (body.role === 'young' && age === null)
             fail('Skriv en gyldig fødselsdato som ÅÅÅÅ-MM-DD.');
+          // RETTELSE (aldersgrænse): Unge skal være mindst 14 år for at oprette en konto.
+          if (body.role === 'young' && age < MIN_AGE)
+            fail(`Du skal være mindst ${MIN_AGE} år for at oprette en konto.`);
           const parentPhone =
             body.role === 'young' && age < 18 ? normalizePhone(body.parentPhone) : null;
           if (body.role === 'young' && age < 18 && !parentPhone)
@@ -562,6 +565,18 @@ function createServer(
         } catch (error) {
           fail(error.message);
         }
+        // RETTELSE (timer efter alder): Tjekkes her, fordi kun serveren kender fødselsdatoen.
+        // Alderen beregnes på startdatoen. Ældre konti uden fødselsdato får ingen ekstra grænse.
+        const birthDate = one(
+          'SELECT birth_date FROM user_contacts WHERE user_id=?',
+          a.user_id
+        )?.birth_date;
+        const ageAtStart = birthDate ? ageOnDate(birthDate, terms.startDate) : null;
+        if (ageAtStart !== null && ageAtStart < MIN_AGE)
+          fail(`Personen skal være mindst ${MIN_AGE} år, når jobbet starter.`);
+        const maxHours = maxHoursForAge(ageAtStart);
+        if (maxHours !== null && terms.hoursPerWeek > maxHours)
+          fail(`Personens alder tillader højst ${maxHours} timer om ugen.`);
         const id = randomUUID();
         run(
           'INSERT INTO employment_offers(id,application_id,company_id,user_id,terms,created_at) VALUES(?,?,?,?,?,?)',

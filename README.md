@@ -21,7 +21,7 @@ npm.cmd install
 npm.cmd start
 ```
 
-Web: `npm.cmd run web`. Opret først en virksomhedskonto og et job, log ud, opret en ungekonto, og søg jobbet. Kontooprettelse kræver navn, e-mail, telefonnummer og mindst 10 tegn i adgangskoden. Unge angiver også fødselsdato (ÅÅÅÅ-MM-DD); er man under 18, er en forælders telefonnummer obligatorisk. Der følger ingen konti eller adgangskoder med.
+Web: `npm.cmd run web`. Opret først en virksomhedskonto og et job, log ud, opret en ungekonto, og søg jobbet. Kontooprettelse kræver navn, e-mail, telefonnummer og mindst 10 tegn i adgangskoden. Unge angiver også fødselsdato (ÅÅÅÅ-MM-DD) og skal være mindst 14 år; er man under 18, er en forælders telefonnummer obligatorisk. Tilbud følger Arbejdstilsynets timegrænser: højst 12 timer om ugen for 14-årige og 40 timer for 15-17-årige. Der følger ingen konti eller adgangskoder med.
 
 Telefonnumre accepteres som 8 cifre eller med international landekode (fx +45). Kravene kontrolleres både i formularen og på serveren. Telefonnumre og fødselsdato gemmes separat som private kontooplysninger og deles ikke via profiler eller ansøgninger. Numrene registreres uden SMS-verifikation. Eksisterende konti kan stadig logge ind; de nye felter kræves ved ny konto-oprettelse.
 

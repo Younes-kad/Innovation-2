@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../styles';
 import { Button, Field } from '../components/ProfileUI';
-import { ageOnDate, normalizePhone } from '../shared/registration';
+import { MIN_AGE, ageOnDate, normalizePhone } from '../shared/registration';
 export default function RoleScreen({ navigation, route, onAuthenticate }) {
   const isCompany = route.name === 'CompanyLogin';
   const [register, setRegister] = useState(false);
@@ -25,6 +25,11 @@ export default function RoleScreen({ navigation, route, onAuthenticate }) {
       }
       if (!isCompany && age === null) {
         setError('Skriv en gyldig fødselsdato som ÅÅÅÅ-MM-DD.');
+        return;
+      }
+      // RETTELSE (aldersgrænse): Samme grænse som på serveren, så man får besked med det samme.
+      if (!isCompany && age < MIN_AGE) {
+        setError(`Du skal være mindst ${MIN_AGE} år for at oprette en konto.`);
         return;
       }
       if (!isCompany && age < 18 && !normalizePhone(parentPhone)) {
@@ -120,8 +125,8 @@ export default function RoleScreen({ navigation, route, onAuthenticate }) {
                         maxLength={10}
                       />
                       <Text style={styles.helper}>
-                        Vi bruger din fødselsdato til at afgøre, om en forælders telefonnummer er
-                        påkrævet.
+                        Du skal være mindst {MIN_AGE} år. Vi bruger din fødselsdato til at tjekke
+                        din alder, og om en forælders telefonnummer er påkrævet.
                       </Text>
                       {age !== null && age < 18 && (
                         <Field

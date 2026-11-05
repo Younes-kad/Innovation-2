@@ -116,6 +116,12 @@ export function TermsForm({ value, onChange, disabled }) {
       <Text style={styles.helper}>
         Løn og arbejdstid vises kun til virksomheden og modtageren af tilbuddet.
       </Text>
+      {/* RETTELSE (timer efter alder): Appen ved ikke, om 9. klasse er afsluttet, så virksomheden
+          får reglen her. Selve grænserne tjekkes på serveren (se shared/employment.js). */}
+      <Text style={styles.helper}>
+        Under 18 år: 14-årige må højst arbejde 12 timer om ugen og 15-17-årige højst 40 timer. Har
+        den unge ikke afsluttet 9. klasse, er grænsen 12 timer i skoleuger.
+      </Text>
     </View>
   );
 }
