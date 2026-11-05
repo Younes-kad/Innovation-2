@@ -335,7 +335,7 @@ async function listen(server) {
     await checkNav();
     await tab('Job').click();
     await page.getByRole('button', { name: /^Ansøgninger/ }).click();
-    await visibleText('Test Ung');
+    await visibleText('Test Ung ↗');
     await checkNav();
     await page.setViewportSize({ width: 320, height: 844 });
     await checkNav();
