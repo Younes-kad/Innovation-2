@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../styles';
 import { Button, Field } from '../components/ProfileUI';
 import { MIN_AGE, ageOnDate, normalizePhone } from '../shared/registration';
-export default function RoleScreen({ navigation, route, onAuthenticate }) {
+export default function RoleScreen({ navigation, route, onAuthenticate, notice }) {
   const isCompany = route.name === 'CompanyLogin';
   const [register, setRegister] = useState(false);
   const [name, setName] = useState('');
@@ -71,6 +71,14 @@ export default function RoleScreen({ navigation, route, onAuthenticate }) {
             </View>
             <Text style={styles.brandCaption}>Små skridt. Nye muligheder.</Text>
           </View>
+          {/* RETTELSE (udløbet login): Forklarer, hvorfor man er tilbage på login. */}
+          {notice ? (
+            <View style={styles.demoNotice}>
+              <Text accessibilityRole="alert" style={styles.noteText}>
+                {notice}
+              </Text>
+            </View>
+          ) : null}
           <View style={styles.card}>
             <Text style={styles.eyebrow}>{isCompany ? 'FOR VIRKSOMHEDER' : 'FOR UNGE'}</Text>
             <Text style={styles.pageTitle}>

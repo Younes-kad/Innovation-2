@@ -11,6 +11,11 @@ let token = '';
 export const setToken = value => {
   token = value;
 };
+// RETTELSE (udløbet login): App.js registrerer her, hvad der skal ske, når serveren afviser sessionen.
+let onSessionExpired = () => {};
+export const setSessionExpiredHandler = handler => {
+  onSessionExpired = handler;
+};
 export async function api(path, method = 'GET', body) {
   let response;
   try {
@@ -28,6 +33,9 @@ export async function api(path, method = 'GET', body) {
     );
   }
   const data = await response.json();
+  // RETTELSE (udløbet login): Sessioner udløber efter 24 timer. Uden dette fejlede alle skærme, og
+  // man blev siddende i appen. Kun når vi har sendt en nøgle, så et forkert login ikke tæller med.
+  if (response.status === 401 && token) onSessionExpired();
   if (!response.ok) throw new Error(data.error || 'Handlingen kunne ikke gennemføres.');
   return data;
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors, styles } from './styles';
 import { demoJobs, companyJobs } from './data/jobs';
-import { api, setToken } from './data/api';
+import { api, setSessionExpiredHandler, setToken } from './data/api';
 import { ActivityProvider, useActivity } from './data/ActivityContext';
 import FeedScreen from './screens/FeedScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -174,6 +174,17 @@ export default function App() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sessionMessage, setSessionMessage] = useState('');
+  // RETTELSE (udløbet login): Send brugeren til login med en forklaring, når sessionen er udløbet.
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      setToken('');
+      setUser(null);
+      setJobs([]);
+      setError('');
+      setSessionMessage('Du er blevet logget ud, fordi din session er udløbet. Log ind igen.');
+    });
+  }, []);
   async function refresh() {
     setLoading(true);
     setError('');
@@ -197,6 +208,7 @@ export default function App() {
     }
     setToken(result.token);
     setUser(result.user);
+    setSessionMessage('');
     setJobs([]);
     await refresh();
   }
@@ -235,10 +247,10 @@ export default function App() {
           ) : (
             <Stack.Navigator screenOptions={stackOptions}>
               <Stack.Screen name="Role" options={{ headerShown: false }}>
-                {p => <RoleScreen {...p} onAuthenticate={authenticate} />}
+                {p => <RoleScreen {...p} onAuthenticate={authenticate} notice={sessionMessage} />}
               </Stack.Screen>
               <Stack.Screen name="CompanyLogin" options={{ headerShown: false }}>
-                {p => <RoleScreen {...p} onAuthenticate={authenticate} />}
+                {p => <RoleScreen {...p} onAuthenticate={authenticate} notice={sessionMessage} />}
               </Stack.Screen>
             </Stack.Navigator>
           )}
