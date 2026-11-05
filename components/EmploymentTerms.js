@@ -15,6 +15,7 @@ export const offerStatus = {
   pending: 'Afventer den unges godkendelse',
   accepted: 'Godkendt af den unge',
   declined: 'Afvist af den unge',
+  withdrawn: 'Trukket tilbage af virksomheden',
 };
 export function TermsSummary({ terms }) {
   return (

@@ -483,7 +483,35 @@ function createServer(
         );
         if (!a) fail('Ansøgningen blev ikke fundet.', 404);
         if (!statuses.includes(body.status)) fail('Ugyldig status.');
-        run('UPDATE applications SET status=? WHERE id=?', body.status, a.id);
+        // RETTELSE (tilbud på afvist ansøgning): En ansøgning fra en person, der er ansat på jobbet,
+        // kan ikke ændres. Flyttes en ansøgning væk fra "Accepteret", mens et tilbud afventer svar,
+        // trækkes tilbuddet tilbage, og den unge får besked, så det ikke kan godkendes bagefter.
+        if (
+          body.status !== a.status &&
+          one("SELECT id FROM employment_offers WHERE application_id=? AND status='accepted'", a.id)
+        )
+          fail('Personen er ansat på dette job, så ansøgningen kan ikke ændres.', 409);
+        db.exec('BEGIN');
+        try {
+          run('UPDATE applications SET status=? WHERE id=?', body.status, a.id);
+          if (body.status !== 'Accepteret') {
+            for (const o of all(
+              "SELECT id,user_id FROM employment_offers WHERE application_id=? AND status='pending'",
+              a.id
+            )) {
+              run(
+                "UPDATE employment_offers SET status='withdrawn',responded_at=? WHERE id=?",
+                new Date().toISOString(),
+                o.id
+              );
+              notify(o.user_id, 'profile', `withdrawn:${o.id}`);
+            }
+          }
+          db.exec('COMMIT');
+        } catch (error) {
+          db.exec('ROLLBACK');
+          throw error;
+        }
         return reply({ ok: true });
       }
       if (route === '/employment-offers' && method === 'POST') {
@@ -565,6 +593,10 @@ function createServer(
         if (!addLater && body.decision === 'accepted' && typeof body.addToProfile !== 'boolean')
           fail('Vælg om ansættelsen skal tilføjes til profilen.');
         const a = one('SELECT * FROM applications WHERE id=?', o.application_id);
+        // RETTELSE (tilbud på afvist ansøgning): Ekstra sikring for tilbud fra før rettelsen, som
+        // stadig afventer svar, selvom ansøgningen er afvist.
+        if (!addLater && body.decision === 'accepted' && a.status !== 'Accepteret')
+          fail('Virksomheden har trukket ansøgningen tilbage.', 409);
         const now = new Date().toISOString();
         db.exec('BEGIN');
         try {
