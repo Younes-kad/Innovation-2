@@ -17,7 +17,6 @@ if errorlevel 1 (
   exit /b 1
 )
 if not exist "node_modules\.bin\expo.cmd" goto install
-if not exist "node_modules\@react-native-async-storage\async-storage\package.json" goto install
 if not exist "node_modules\expo-image-picker\package.json" goto install
 if not exist "node_modules\@react-navigation\bottom-tabs\package.json" goto install
 if not exist "node_modules\@expo\vector-icons\package.json" goto install

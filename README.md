@@ -21,7 +21,7 @@ npm.cmd install
 npm.cmd start
 ```
 
-Web: `npm.cmd run web`. Opret først en virksomhedskonto og et job, log ud, opret en ungekonto, og søg jobbet. Kontooprettelse kræver navn, e-mail, telefonnummer og mindst 10 tegn i adgangskoden. Unge angiver også fødselsdato (ÅÅÅÅ-MM-DD); er man under 18, er en forælders telefonnummer obligatorisk. Der følger ingen konti eller adgangskoder med.
+Web: `npm.cmd run web`. Opret først en virksomhedskonto og et job, log ud, opret en ungekonto, og søg jobbet. Kontooprettelse kræver navn, e-mail, telefonnummer og mindst 10 tegn i adgangskoden. Unge angiver også fødselsdato (ÅÅÅÅ-MM-DD) og skal være mindst 14 år; er man under 18, er en forælders telefonnummer obligatorisk. Tilbud følger Arbejdstilsynets timegrænser: højst 12 timer om ugen for 14-årige og 40 timer for 15-17-årige. Der følger ingen konti eller adgangskoder med.
 
 Telefonnumre accepteres som 8 cifre eller med international landekode (fx +45). Kravene kontrolleres både i formularen og på serveren. Telefonnumre og fødselsdato gemmes separat som private kontooplysninger og deles ikke via profiler eller ansøgninger. Numrene registreres uden SMS-verifikation. Eksisterende konti kan stadig logge ind; de nye felter kræves ved ny konto-oprettelse.
 
@@ -59,7 +59,6 @@ Efter opgradering fra SDK 57: stop den gamle server med Ctrl+C, kør `npm.cmd in
 - Oprettelse, redigering og sletning af egne opslag med billeder, dato og nyeste først.
 - Privatliv pr. profilsektion og pr. opslag. Alt er privat som udgangspunkt. Kun ejeren kan redigere. Virksomhedsdelte profilsektioner og opslag kræver en ansøgnings- eller ansættelsesrelation; deling med følgere er et separat tilvalg. Navn og indsendte ansøgningsoplysninger deles med modtagervirksomheden.
 - Eksisterende eksempelopslag er bevaret og markeret; de kan ikke søges, da de ikke tilhører en registreret virksomhed.
-- Ældre jobopslag under AsyncStorage-nøglen `foothold.companyJobs.v2` kan importeres via virksomhedens dashboard. Brugeren vælger, hvilken virksomhed de tilhører. Originalerne bevares, og gentagen import til samme virksomhed opretter ingen dubletter.
 
 Filtrene i både joboversigten og Ansøgninger er funktionelle.
 
@@ -85,6 +84,8 @@ npm.cmd run test:ui
 ```
 
 Integrationstesten bruger en isoleret midlertidig database og dækker profilredigering, erfaring og uddannelse, opslag med billeder, ansøgning, virksomhedsoversigt, profilvisning med privatlivsfiltre, statusændringer og persistens efter servergenstart. Tilbudsflowet testes for løn/timer/varighed, afvisning og genfremsendelse, medarbejdergodkendelse, ingen ansættelse før godkendelse, øjeblikkelig/senere/ingen tilføjelse til profil, beskyttelse af lønoplysninger og blokering af fremmede konti og dobbelte svar. Testene dækker også registreringens telefonkrav og 18-årsgrænse, dubletter, ugyldige datoer, billedformater og tilbagekaldelse af deling.
+
+`server/rettelser.test.cjs` har én test for hver rettet fejl, så en fejl kan spores til sin commit.
 
 Feedtesten kontrollerer opt-in, følg/stop, virksomhedsopslag, privatliv og ulæste badges, inklusive nye opslag der ankommer, mens en skærm bliver læst. UI-testen bruger den eksporterede webapp, en isoleret database i hukommelsen og en skjult Edge-browser. Den gennemfører navigation, feed, jobfiltrering, ansøgning, tilbudsgodkendelse og virksomhedens ansatte ved 320/390 px bredde. Edge skal være installeret; alternativt kan `BROWSER_CHANNEL` sættes til fx `chrome`. Der ændres ingen rigtige konti i testen.
 

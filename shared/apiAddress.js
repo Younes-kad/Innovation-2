@@ -8,7 +8,9 @@ function resolveApiUrl({ override, platform, webOrigin, hostUri }) {
     try {
       const host = new URL(hostUri.includes('://') ? hostUri : `http://${hostUri}`).hostname;
       if (host) return `http://${host}:3001`;
-    } catch { /* No development host is available in some standalone builds. */ }
+    } catch {
+      /* No development host is available in some standalone builds. */
+    }
   }
   return 'http://localhost:3001';
 }

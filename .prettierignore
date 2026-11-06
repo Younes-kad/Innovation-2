@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.expo/
+server/storage/
+package-lock.json
+README.md
+*.zip
