@@ -1,3 +1,4 @@
+import BrandLogo from '../components/BrandLogo';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import { FlatList, Text, View } from 'react-native';
@@ -108,13 +109,8 @@ export default function FeedScreen({ navigation, user }) {
         ListHeaderComponent={
           <>
             <View style={[styles.brandRow, { marginBottom: 16 }]}>
-              <View style={styles.companyRow}>
-                <View style={styles.brandMark}>
-                  <Text style={styles.brandMarkText}>f.</Text>
-                </View>
-                <Text style={styles.brandName}>foothold</Text>
-              </View>
-              <Ionicons name="sparkles-outline" size={24} color={colors.green} />
+              <BrandLogo />
+              <Ionicons name="chatbubbles-outline" size={24} color={colors.petrol} />
             </View>
             <Text style={styles.sectionTitle}>
               {user.role === 'company' ? 'Jeres feed' : 'Dit feed'}
@@ -122,7 +118,7 @@ export default function FeedScreen({ navigation, user }) {
             <Text style={[styles.sectionDescription, { marginBottom: 18 }]}>
               Oplevelser, nye skridt og jobmuligheder.
             </Text>
-            <View style={styles.card}>
+            <View style={[styles.card, styles.composerCard]}>
               <View style={styles.companyRow}>
                 <Avatar name={profile?.name || user.name} uri={profile?.avatar} />
                 <View style={styles.flex}>

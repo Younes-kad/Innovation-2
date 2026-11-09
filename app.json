@@ -6,8 +6,10 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/brand/foothold-icon.png"
     },
-    "plugins": ["expo-status-bar", "expo-font"]
+    "plugins": ["expo-status-bar", "expo-font"],
+    "icon": "./assets/brand/foothold-icon.png"
   }
 }

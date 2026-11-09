@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
-import { styles } from '../styles';
+import { styles, jobTone } from '../styles';
 import JobTags from './JobTags';
 
 export default function JobCard({ job, onPress }) {
@@ -7,8 +7,8 @@ export default function JobCard({ job, onPress }) {
     <View style={styles.card}>
       <View style={styles.rowBetween}>
         <View style={styles.companyRow}>
-          <View style={[styles.logo, { backgroundColor: job.background }]}>
-            <Text style={[styles.logoText, { color: job.color }]}>{job.initials}</Text>
+          <View style={[styles.logo, { backgroundColor: jobTone(job).background }]}>
+            <Text style={[styles.logoText, { color: jobTone(job).color }]}>{job.initials}</Text>
           </View>
           <View style={styles.flex}>
             <Text style={styles.company}>{job.company}</Text>
@@ -30,8 +30,8 @@ export default function JobCard({ job, onPress }) {
       {job.ageGroup ? <Text style={styles.location}>Aldersgruppe: {job.ageGroup}</Text> : null}
       <JobTags tags={job.tags} />
       <View style={styles.cardFooter}>
-        <View style={[styles.badge, { backgroundColor: job.background }]}>
-          <Text style={[styles.badgeText, { color: job.color }]}>{job.category}</Text>
+        <View style={[styles.badge, { backgroundColor: jobTone(job).background }]}>
+          <Text style={[styles.badgeText, { color: jobTone(job).color }]}>{job.category}</Text>
         </View>
         <Pressable
           accessibilityRole="button"

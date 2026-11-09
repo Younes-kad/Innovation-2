@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { styles } from '../styles';
+import { styles, jobTone } from '../styles';
 import JobTags from '../components/JobTags';
 
 export default function JobScreen({ navigation, route, jobs, canApply }) {
@@ -27,8 +27,10 @@ export default function JobScreen({ navigation, route, jobs, canApply }) {
     <SafeAreaView style={styles.screen} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.pageContent}>
         <View style={styles.detailTop}>
-          <View style={[styles.largeLogo, { backgroundColor: job.background }]}>
-            <Text style={[styles.largeLogoText, { color: job.color }]}>{job.initials}</Text>
+          <View style={[styles.largeLogo, { backgroundColor: jobTone(job).background }]}>
+            <Text style={[styles.largeLogoText, { color: jobTone(job).color }]}>
+              {job.initials}
+            </Text>
           </View>
           <Text style={styles.eyebrow}>{job.company}</Text>
           <Text style={styles.pageTitle}>{job.title}</Text>
@@ -40,8 +42,8 @@ export default function JobScreen({ navigation, route, jobs, canApply }) {
           )}
           <View style={styles.metaRow}>
             <Text style={styles.location}>{job.location}</Text>
-            <View style={[styles.badge, { backgroundColor: job.background }]}>
-              <Text style={[styles.badgeText, { color: job.color }]}>{job.category}</Text>
+            <View style={[styles.badge, { backgroundColor: jobTone(job).background }]}>
+              <Text style={[styles.badgeText, { color: jobTone(job).color }]}>{job.category}</Text>
             </View>
           </View>
         </View>

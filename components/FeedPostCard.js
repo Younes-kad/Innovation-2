@@ -1,5 +1,5 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, styles } from '../styles';
+import { colors, fonts, styles } from '../styles';
 import { Avatar, Button, dateLabel } from './ProfileUI';
 
 export default function FeedPostCard({ post, own, following, busy, onProfile, onFollow, onEdit }) {
@@ -67,10 +67,22 @@ const card = StyleSheet.create({
     marginBottom: 16,
   },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  name: { fontSize: 15, fontWeight: '700', color: colors.ink, lineHeight: 21 },
-  meta: { fontSize: 12, color: colors.muted, lineHeight: 18, marginTop: 2 },
-  demo: { fontSize: 11, color: colors.muted, marginTop: 14 },
-  text: { fontSize: 15, color: colors.ink, lineHeight: 25, marginTop: 18 },
+  name: { fontSize: 15, fontFamily: fonts.bold, color: colors.ink, lineHeight: 21 },
+  meta: {
+    fontSize: 12,
+    fontFamily: fonts.regular,
+    color: colors.muted,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  demo: { fontSize: 11, fontFamily: fonts.regular, color: colors.muted, marginTop: 14 },
+  text: {
+    fontSize: 15,
+    fontFamily: fonts.regular,
+    color: colors.ink,
+    lineHeight: 25,
+    marginTop: 18,
+  },
   image: {
     width: '100%',
     aspectRatio: 1.25,

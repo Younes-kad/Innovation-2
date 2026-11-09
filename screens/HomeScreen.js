@@ -1,3 +1,4 @@
+import BrandLogo from '../components/BrandLogo';
 import { useCallback, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { FlatList, Pressable, Text, View } from 'react-native';
@@ -67,12 +68,7 @@ export default function HomeScreen({ navigation, jobs, onRefresh, refreshing, st
         ListHeaderComponent={
           <>
             <View style={styles.brandRow}>
-              <View style={styles.companyRow}>
-                <View style={styles.brandMark}>
-                  <Text style={styles.brandMarkText}>f.</Text>
-                </View>
-                <Text style={styles.brandName}>foothold</Text>
-              </View>
+              <BrandLogo />
               <Ionicons name="briefcase-outline" size={24} color={colors.green} />
             </View>
             <Text style={styles.eyebrow}>DIN NÆSTE MULIGHED</Text>

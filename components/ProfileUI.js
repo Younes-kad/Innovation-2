@@ -1,5 +1,5 @@
 import { Image, Pressable, Switch, Text, TextInput, View } from 'react-native';
-import { colors, styles } from '../styles';
+import { colors, fonts, styles } from '../styles';
 export function Button({ title, onPress, disabled, secondary = false }) {
   return (
     <Pressable
@@ -62,7 +62,7 @@ export function Avatar({ uri, name, large = false }) {
         alignItems: 'center',
       }}
     >
-      <Text style={{ color: colors.green, fontSize: large ? 28 : 18, fontWeight: '700' }}>
+      <Text style={{ color: colors.green, fontSize: large ? 28 : 18, fontFamily: fonts.bold }}>
         {(name || '?')
           .split(' ')
           .map(s => s[0])

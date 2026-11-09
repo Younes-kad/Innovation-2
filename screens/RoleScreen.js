@@ -1,3 +1,4 @@
+import BrandLogo from '../components/BrandLogo';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -63,12 +64,7 @@ export default function RoleScreen({ navigation, route, onAuthenticate, notice }
       >
         <ScrollView contentContainerStyle={styles.loginContent} keyboardShouldPersistTaps="handled">
           <View style={styles.brandRow}>
-            <View style={styles.companyRow}>
-              <View style={styles.brandMark}>
-                <Text style={styles.brandMarkText}>f.</Text>
-              </View>
-              <Text style={styles.brandName}>foothold</Text>
-            </View>
+            <BrandLogo />
             <Text style={styles.brandCaption}>Små skridt. Nye muligheder.</Text>
           </View>
           {/* RETTELSE (udløbet login): Forklarer, hvorfor man er tilbage på login. */}
@@ -79,7 +75,7 @@ export default function RoleScreen({ navigation, route, onAuthenticate, notice }
               </Text>
             </View>
           ) : null}
-          <View style={styles.card}>
+          <View style={[styles.card, styles.loginCard]}>
             <Text style={styles.eyebrow}>{isCompany ? 'FOR VIRKSOMHEDER' : 'FOR UNGE'}</Text>
             <Text style={styles.pageTitle}>
               {register ? 'Opret din konto' : 'Velkommen tilbage'}

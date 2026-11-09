@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, styles } from './styles';
+import { useFonts } from 'expo-font';
+import BrandLogo from './components/BrandLogo';
+import { colors, fonts, styles } from './styles';
 import { demoJobs, companyJobs } from './data/jobs';
 import { api, setSessionExpiredHandler, setToken } from './data/api';
 import { ActivityProvider, useActivity } from './data/ActivityContext';
@@ -21,7 +23,26 @@ import EmploymentScreen from './screens/EmploymentScreen';
 
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
+const navigationTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: colors.petrol,
+    background: colors.background,
+    card: colors.white,
+    text: colors.ink,
+    border: colors.border,
+    notification: colors.orange,
+  },
+  fonts: {
+    regular: { fontFamily: fonts.regular, fontWeight: '400' },
+    medium: { fontFamily: fonts.bold, fontWeight: '400' },
+    bold: { fontFamily: fonts.bold, fontWeight: '400' },
+    heavy: { fontFamily: fonts.bold, fontWeight: '400' },
+  },
+};
 const stackOptions = {
+  headerRight: () => <BrandLogo markOnly size={26} />,
   headerStyle: styles.navigationHeader,
   headerTintColor: colors.ink,
   headerShadowVisible: false,
@@ -138,12 +159,17 @@ function MainTabs(props) {
             paddingTop: 8,
             paddingBottom: Math.max(8, insets.bottom),
           },
-          tabBarLabelStyle: { fontSize: 12, fontWeight: '700' },
+          tabBarLabelStyle: { fontSize: 12, fontFamily: fonts.bold },
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={icons[focused ? 1 : 0]} size={size} color={color} />
           ),
           tabBarBadge: counts[key] ? (counts[key] > 99 ? '99+' : counts[key]) : undefined,
-          tabBarBadgeStyle: { backgroundColor: '#D83B47', color: '#fff', fontSize: 10 },
+          tabBarBadgeStyle: {
+            backgroundColor: colors.petrol,
+            color: colors.white,
+            fontSize: 10,
+            fontFamily: fonts.bold,
+          },
           tabBarHideOnKeyboard: true,
         };
       }}
@@ -170,6 +196,10 @@ function MainTabs(props) {
   );
 }
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts({
+    'Lato-Regular': require('./assets/fonts/Lato-Regular.ttf'),
+    'Lato-Bold': require('./assets/fonts/Lato-Bold.ttf'),
+  });
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -227,12 +257,13 @@ export default function App() {
     await api('/jobs', 'POST', fields);
     await refresh();
   }
+  if (!fontsLoaded && !fontError) return null;
   const examples = [...companyJobs, ...demoJobs].map(j => ({ ...j, demo: true }));
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <ActivityProvider key={user?.id || 'guest'} user={user}>
-        <NavigationContainer key={user?.id || 'guest'}>
+        <NavigationContainer theme={navigationTheme} key={user?.id || 'guest'}>
           {user ? (
             <MainTabs
               user={user}

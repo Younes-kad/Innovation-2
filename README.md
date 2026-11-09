@@ -1,6 +1,6 @@
 # Foothold
 
-Foothold er en React Native/Expo-app, der hjælper unge uden tidligere erhvervserfaring med at finde deres første job. Appen har nu en Node-backend og permanent SQLite-database; det eksisterende grønne design og joboversigten er bevaret.
+Foothold er en React Native/Expo-app, der hjælper unge uden tidligere erhvervserfaring med at finde deres første job. Appen har nu en Node-backend og permanent SQLite-database; designet bruger logoets petrol, creme og varme orange med afdæmpede farvevariationer. Lato-fonten er inkluderet lokalt til både web og mobil.
 
 ## Start
 
@@ -97,7 +97,10 @@ Manuel kontrol: opret virksomhed og job → opret ung og profil → tilføj erfa
 - `screens/`: Appens skærme.
 - `components/`: Genbrugelige jobkort og tags.
 - `data/`: Demonstrationsjobs og valgbare tags.
-- `styles.js`: Styling og farver.
+- `styles.js`: Fælles farvepalette, typografi og styling.
+- `components/BrandLogo.js`: Genbrugeligt logo til login, feed, joboversigt og navigationshoveder.
+- `assets/brand/`: Logomærke genskabt som SVG og PNG ud fra referencebilledet samt appikon/favicon.
+- `assets/fonts/`: Lokale Lato-fontfiler og deres OFL-licens.
 - `server/index.cjs`: API, SQLite-skema, validering og adgangskontrol.
 - `server/server.test.cjs`: Integrationstest af hele flowet.
 - `data/api.js`: API-klient; sessionsnøglen gemmes kun i hukommelsen.

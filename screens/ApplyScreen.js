@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, styles } from '../styles';
+import { colors, styles, jobTone } from '../styles';
 import { api } from '../data/api';
 
 export default function ApplyScreen({ navigation, route, jobs, user }) {
@@ -108,8 +108,8 @@ export default function ApplyScreen({ navigation, route, jobs, user }) {
             Du behøver ikke et langt CV. Start med at fortælle, hvem du er.
           </Text>
           <View style={styles.applicationJob}>
-            <View style={[styles.logo, { backgroundColor: job.background }]}>
-              <Text style={[styles.logoText, { color: job.color }]}>{job.initials}</Text>
+            <View style={[styles.logo, { backgroundColor: jobTone(job).background }]}>
+              <Text style={[styles.logoText, { color: jobTone(job).color }]}>{job.initials}</Text>
             </View>
             <View style={styles.flex}>
               <Text style={styles.company}>{job.title}</Text>
